@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="t d">
+  <title id="t">Hark</title>
+  <desc id="d">Record a lecture, search what was said, keep it on your laptop.</desc>
+  <defs>
+    <style>
+      .wordmark { font: 600 72px/1 Inter, -apple-system, "SF Pro Display", "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: -2px; fill: #1D1D1F; }
+      .tag { font: 400 22px/1.4 Inter, -apple-system, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif; fill: #6E6E73; }
+      .eyebrow { font: 600 12px/1 Inter, -apple-system, "SF Pro Text", "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: 2px; fill: #0B63E5; }
+    </style>
+  </defs>
+  <rect x="0.5" y="0.5" width="1199" height="299" rx="24" fill="#FFFFFF" stroke="#E5E5EA"/>
+  <rect x="72" y="86" width="128" height="128" rx="36" fill="#0B63E5"/>
+  <rect x="112" y="130" width="14" height="40" rx="4" fill="#FFFFFF"/>
+  <rect x="129" y="113" width="14" height="74" rx="4" fill="#FFFFFF"/>
+  <rect x="146" y="123" width="14" height="54" rx="4" fill="#FFFFFF"/>
+  <text x="240" y="118" class="eyebrow">HARK.AI</text>
+  <text x="236" y="186" class="wordmark">Hark</text>
+  <text x="240" y="226" class="tag">Record a lecture. Search what was said. Nothing leaves your laptop.</text>
+  <g fill="#0B63E5" transform="translate(770 150)">
+    <rect x="0" y="-18" width="6" height="36" rx="3" opacity="0.95"/><rect x="12" y="-40" width="6" height="80" rx="3" opacity="0.9"/><rect x="24" y="-26" width="6" height="52" rx="3" opacity="0.95"/><rect x="36" y="-56" width="6" height="112" rx="3" opacity="0.85"/><rect x="48" y="-34" width="6" height="68" rx="3" opacity="0.9"/><rect x="60" y="-12" width="6" height="24" rx="3" opacity="0.95"/><rect x="72" y="-46" width="6" height="92" rx="3" opacity="0.85"/><rect x="84" y="-70" width="6" height="140" rx="3" opacity="0.8"/><rect x="96" y="-30" width="6" height="60" rx="3" opacity="0.9"/><rect x="108" y="-52" width="6" height="104" rx="3" opacity="0.85"/><rect x="120" y="-20" width="6" height="40" rx="3" opacity="0.95"/><rect x="132" y="-38" width="6" height="76" rx="3" opacity="0.9"/><rect x="144" y="-62" width="6" height="124" rx="3" opacity="0.8"/><rect x="156" y="-24" width="6" height="48" rx="3" opacity="0.95"/><rect x="168" y="-44" width="6" height="88" rx="3" opacity="0.85"/><rect x="180" y="-16" width="6" height="32" rx="3" opacity="0.95"/><rect x="192" y="-36" width="6" height="72" rx="3" opacity="0.4"/><rect x="204" y="-58" width="6" height="116" rx="3" opacity="0.35"/><rect x="216" y="-28" width="6" height="56" rx="3" opacity="0.35"/><rect x="228" y="-48" width="6" height="96" rx="3" opacity="0.3"/><rect x="240" y="-14" width="6" height="28" rx="3" opacity="0.3"/><rect x="252" y="-32" width="6" height="64" rx="3" opacity="0.3"/><rect x="264" y="-22" width="6" height="44" rx="3" opacity="0.25"/><rect x="276" y="-42" width="6" height="84" rx="3" opacity="0.25"/><rect x="288" y="-18" width="6" height="36" rx="3" opacity="0.25"/><rect x="300" y="-30" width="6" height="60" rx="3" opacity="0.2"/><rect x="312" y="-12" width="6" height="24" rx="3" opacity="0.2"/><rect x="324" y="-26" width="6" height="52" rx="3" opacity="0.2"/><rect x="336" y="-10" width="6" height="20" rx="3" opacity="0.2"/>
+  </g>
+</svg>
