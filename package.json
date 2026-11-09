@@ -10,14 +10,17 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",
-    "format:write": "prettier --write ."
+    "format:write": "prettier --write .",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
+    "jsdom": "^31.0.0",
     "prettier": "^3.9.10",
-    "vite": "^6.4.5"
+    "vite": "^6.4.5",
+    "vitest": "^5.1.0"
   },
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
