@@ -78,7 +78,8 @@
 
 /*
   dark theme. the figma file does not define dark values for blue tint, green,
-  and red, so those use the apple system dark equivalents until the mocks do.
+  and red, so green and red use apple system dark values and blue tint is a
+  darkened blue until the mocks define them.
 */
 :root[data-theme='dark'] {
   color-scheme: dark;

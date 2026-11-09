@@ -45,7 +45,7 @@ Hark turns a recording into a searchable, timestamped transcript with a short su
 | Export | Markdown, plain text, SRT captions, or everything as a zip | Planned |
 | Works offline after first load | Models and recordings are cached in the browser | Planned |
 
-**Boundaries are deliberate.** Hark never sends audio or text anywhere. There is no login, no analytics, and no sync. If you clear the browser's site data, the recordings are gone, and the settings page says so.
+**Boundaries are deliberate.** Hark never sends audio or text anywhere. There is no login, no analytics, and no sync. If you clear the browser's site data, the recordings are gone, and the settings page will say so.
 
 ## A short walkthrough
 
@@ -108,7 +108,7 @@ Most of the interface uses patterns from *Designing Interfaces* (Tidwell, Brewer
 | Progress card with named steps and a cancel action | Transcription takes minutes; people need to know it is working and that they can stop it | Progress Indicator, Cancelability |
 | Drop zone text explains accepted formats | Say what will work before the user tries | Input Hints |
 
-Two decisions came from accessibility readings rather than the pattern book. Every text and accent color meets the WCAG 4.5:1 contrast floor, which is why the app uses a system blue instead of the navy and gold palette I liked more. And every control works from the keyboard, since the transcript itself is the accessibility case for the product.
+Two decisions came from accessibility readings rather than the pattern book. The label, secondary label, and blue action colors meet the WCAG 4.5:1 contrast floor on white, which is why the app uses a system blue instead of the navy and gold palette I liked more. Not every color passes yet. On white, pink and green measure about 4.2:1, teal 3.0:1, and orange 2.5:1, so those need darker values or a role that is never text before the build reaches them. And every control will work from the keyboard, since the transcript itself is the accessibility case for the product.
 
 ## How the machine learning works
 
@@ -125,7 +125,7 @@ Whisper, BART, and MiniLM are released under open licenses. Hark does not fine t
 
 ## Privacy
 
-Audio, transcripts, notes, and embeddings live in the browser's IndexedDB for the site. Nothing is sent to a server, including Hark's own hosting, which only serves static files. Clearing site data deletes everything. The settings page shows what is stored and lets you remove it.
+Audio, transcripts, notes, and embeddings live in the browser's IndexedDB for the site. Nothing is sent to a server, including Hark's own hosting, which only serves static files. Clearing site data deletes everything. The settings page will show what is stored and let you remove it.
 
 ## Class requirements
 
@@ -186,6 +186,10 @@ hark/
 ├── vite.config.js             # base path for github pages
 ├── eslint.config.js           # lint rules for browser, worker, and test code
 ├── .prettierrc                # formatting rules
+├── .prettierignore
+├── .gitignore
+├── package.json               # scripts and dependencies
+├── package-lock.json
 ├── src/
 │   ├── main.js                # loads the styles and mounts the app
 │   ├── app/

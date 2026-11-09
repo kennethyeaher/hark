@@ -46,7 +46,7 @@ Pattern names come from *Designing Interfaces: Patterns for Effective Interactio
 
 ## Color as information
 
-Color coding is not a named pattern in the book, but the chapter on visual design and the "Things that are related logically are related visually" rule from Krug cover it. Each course owns one system color. The same color appears on the sidebar dot, card stripe, folder tile, row icon, and chip. Blue is reserved for actions so a course can never look like a button. All text and accent colors meet the WCAG 2.1 AA contrast floor of 4.5:1, which is the reason the final palette uses a system blue rather than the navy and gold direction from the branding board.
+Color coding is not a named pattern in the book, but the chapter on visual design and the "Things that are related logically are related visually" rule from Krug cover it. Each course owns one system color. The same color appears on the sidebar dot, card stripe, folder tile, row icon, and chip. Blue is reserved for actions so a course can never look like a button. The label, secondary label, and blue action colors meet the WCAG 2.1 AA contrast floor of 4.5:1, which is the reason the final palette uses a system blue rather than the navy and gold direction from the branding board. Pink, green, teal, and orange do not pass yet on white (about 4.2, 4.2, 3.0, and 2.5 to 1), so they need darker values or a role that is never text before the build uses them.
 
 ## What I did not use
 

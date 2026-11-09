@@ -28,4 +28,8 @@ describe('mountApp', () => {
   it('throws a clear error when the root is missing', () => {
     expect(() => mountApp(null)).toThrow(/root element/)
   })
+
+  it('rejects a value that is not an element', () => {
+    expect(() => mountApp('#app')).toThrow(/got #app/)
+  })
 })

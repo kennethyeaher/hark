@@ -25,5 +25,8 @@
   "dependencies": {
     "@huggingface/transformers": "^3.8.1",
     "idb": "^8.0.4"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

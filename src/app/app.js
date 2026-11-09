@@ -1,15 +1,15 @@
 /**
  * Render the app shell into the given root element.
- * @param {HTMLElement | null} root element that receives the app
+ * @param {HTMLElement} root element that receives the app
  * @returns {HTMLElement} the main element that was rendered
- * @throws {Error} when the root element is missing
+ * @throws {Error} when root is missing or is not an html element
  */
 export function mountApp(root) {
-  if (!root) {
-    throw new Error('mountApp needs a root element, and none was found for #app')
+  if (!(root instanceof HTMLElement)) {
+    throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
 
-  // placeholder until the real shell lands in milestone 1
+  // placeholder until the app shell from the first roadmap item is built
   const main = document.createElement('main')
   main.textContent = 'Hark'
   root.replaceChildren(main)
