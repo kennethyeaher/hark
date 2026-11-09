@@ -197,6 +197,7 @@ hark/
 │   ├── assets/                # banner
 │   ├── screenshots/           # exported figma screens and process boards
 │   └── design-patterns.md     # pattern references from designing interfaces
+├── .github/workflows/         # build and deploy to github pages
 ├── LICENSE
 └── README.md
 ```
