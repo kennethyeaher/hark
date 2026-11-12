@@ -19,7 +19,7 @@ export const sampleCourses = [
   {
     id: 'inst360',
     code: 'INST 360',
-    name: 'Intro to Machine Learning Apps',
+    name: 'Programming Human-Centered Interfaces',
     color: 'teal',
     recordingCount: 9,
     totalSeconds: 7 * 3600 + 25 * 60,
@@ -27,7 +27,7 @@ export const sampleCourses = [
   {
     id: 'inst737',
     code: 'INST 737',
-    name: 'Ethics of Design',
+    name: 'Data Science Techniques',
     color: 'orange',
     recordingCount: 11,
     totalSeconds: 8 * 3600 + 50 * 60,
@@ -35,7 +35,7 @@ export const sampleCourses = [
   {
     id: 'inst711',
     code: 'INST 711',
-    name: 'Information Policy',
+    name: 'Interaction Design Studio',
     color: 'pink',
     recordingCount: 6,
     totalSeconds: 5 * 3600 + 10 * 60,

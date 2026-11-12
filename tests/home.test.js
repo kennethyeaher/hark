@@ -27,6 +27,12 @@ describe('sample data', () => {
       'INST 737',
       'INST 711',
     ])
+    expect(sampleCourses.map((course) => course.name)).toEqual([
+      'Qualitative Research Methods',
+      'Programming Human-Centered Interfaces',
+      'Data Science Techniques',
+      'Interaction Design Studio',
+    ])
     expect(sampleCourses.reduce((sum, course) => sum + course.recordingCount, 0)).toBe(38)
   })
 
