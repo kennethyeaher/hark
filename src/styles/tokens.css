@@ -23,11 +23,27 @@
   --color-red: #d93025;
   --color-on-blue: #ffffff;
 
-  /* course colors */
+  /*
+    status text. darker than the shape values so text meets 4.5:1 on both the
+    background and grouped surfaces.
+  */
+  --color-green-text: #1b8138;
+  --color-red-text: #d52f24;
+
+  /*
+    course colors. the plain value is for shapes such as dots, stripes, folder
+    tiles, and waveforms, and meets 3:1 on background and grouped. the text value
+    is for any colored text and meets 4.5:1 on both. tests/contrast.test.js
+    checks every pair.
+  */
   --course-indigo: #5e5ce6;
-  --course-teal: #1fa2b8;
-  --course-orange: #f28c00;
+  --course-indigo-text: #5e5ce6;
+  --course-teal: #1e9aaf;
+  --course-teal-text: #177a8a;
+  --course-orange: #ce7700;
+  --course-orange-text: #a56000;
   --course-pink: #e8325b;
+  --course-pink-text: #db1944;
 
   /* radii */
   --radius-row: 8px;
@@ -79,7 +95,9 @@
 /*
   dark theme. the figma file does not define dark values for blue tint, green,
   and red, so green and red use apple system dark values and blue tint is a
-  darkened blue until the mocks define them.
+  darkened blue until the mocks define them. course colors and the text values
+  above keep their light values here for now. dark course colors get checked in
+  the dark mode milestone.
 */
 :root[data-theme='dark'] {
   color-scheme: dark;
