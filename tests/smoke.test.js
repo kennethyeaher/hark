@@ -90,6 +90,12 @@ describe('mountApp', () => {
     expect(heading.getAttribute('tabindex')).toBe('-1')
   })
 
+  it('leaves focus alone on first load', () => {
+    app = mountApp(document.querySelector('#app'))
+    expect(document.activeElement).toBe(document.body)
+    expect(document.title).toBe('Home · Hark')
+  })
+
   it('shows the not found page for an unknown route', () => {
     app = mountApp(document.querySelector('#app'))
     app.showRoute({ name: 'notFound', params: { path: '/nowhere' }, query: {} })

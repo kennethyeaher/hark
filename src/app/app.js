@@ -62,13 +62,14 @@ function buildLayout() {
  * Point the document title at the page and move focus to its heading so
  * keyboard and screen reader users land on the new page.
  * @param {HTMLElement} page the page that was just shown
+ * @param {boolean} shouldMoveFocus false on first load, so focus starts at the top of the document
  * @returns {void}
  */
-function announcePage(page) {
+function announcePage(page, shouldMoveFocus) {
   const heading = page.querySelector('h1')
   const title = heading?.textContent.trim() || 'Hark'
   document.title = title === 'Hark' ? 'Hark' : `${title} · Hark`
-  if (heading) {
+  if (heading && shouldMoveFocus) {
     heading.setAttribute('tabindex', '-1')
     heading.focus({ preventScroll: true })
   }
@@ -95,6 +96,7 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
+  let hasShownPage = false
   const data = { courses, recordings }
 
   /**
@@ -108,7 +110,8 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
     layout.content.replaceChildren(page)
     setSidebarActive(sidebar, route)
     setSearchQuery(topbar, route.name === 'search' ? (route.query.q ?? '') : '')
-    announcePage(page)
+    announcePage(page, hasShownPage)
+    hasShownPage = true
     return page
   }
 

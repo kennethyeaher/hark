@@ -71,6 +71,11 @@
   white-space: nowrap;
 }
 
+/* flex rows drop plain spaces, so the separator gets its own margin */
+.recording-card-separator {
+  margin: 0 6px;
+}
+
 .recording-card-dot {
   flex: none;
   width: 8px;
@@ -172,8 +177,15 @@
   recording table: the Recent list on home and the course list view. fixed
   layout so the columns line up with the mock at every row count.
 */
+/* narrow windows scroll the table sideways rather than crushing the name column */
+.table-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-row);
+}
+
 .recording-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   table-layout: fixed;
   font-size: var(--text-15);
@@ -193,7 +205,7 @@
 }
 
 .recording-table thead th {
-  height: 40px;
+  height: 32px;
   padding: 0 var(--space-3) 0 0;
   border-bottom: 1px solid var(--color-separator);
   color: var(--color-secondary-label);

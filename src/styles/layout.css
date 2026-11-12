@@ -33,8 +33,11 @@
   padding: var(--space-6) var(--content-padding) var(--space-7);
 }
 
-/* the heading gets focus on route change, so only keyboard focus shows a ring */
-.app-content h1:focus:not(:focus-visible) {
+/*
+  the heading gets focus from script on route change so screen readers land on
+  the new page. it is not a control, so it never shows a ring.
+*/
+.app-content h1[tabindex='-1']:focus {
   outline: none;
 }
 

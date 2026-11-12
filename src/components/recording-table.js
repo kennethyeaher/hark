@@ -94,7 +94,8 @@ function renderRow(recording, course, now) {
  * @param {{ recordings: object[], courses: object[], caption: string, now?: Date }} options
  *   recordings in display order, every course they reference, a caption that is
  *   read by screen readers but hidden on screen, and the current time
- * @returns {HTMLTableElement} the table
+ * @returns {HTMLElement} a scroll region holding the table, so narrow windows scroll the table
+ *   instead of crushing its columns. the region takes focus so keyboard users can scroll it.
  * @throws {TypeError} when the inputs are not arrays, the caption is empty, or a course is missing
  */
 export function renderRecordingTable({ recordings, courses, caption, now = new Date() }) {
@@ -116,7 +117,7 @@ export function renderRecordingTable({ recordings, courses, caption, now = new D
     return renderRow(recording, course, now)
   })
 
-  return createElement('table', { className: 'recording-table' }, [
+  const table = createElement('table', { className: 'recording-table' }, [
     createElement('caption', { className: 'visually-hidden', text: caption }),
     createElement(
       'colgroup',
@@ -132,4 +133,9 @@ export function renderRecordingTable({ recordings, courses, caption, now = new D
     ]),
     createElement('tbody', {}, rows),
   ])
+  return createElement(
+    'div',
+    { className: 'table-scroll', role: 'region', 'aria-label': caption, tabindex: 0 },
+    [table]
+  )
 }

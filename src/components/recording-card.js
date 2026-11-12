@@ -67,7 +67,11 @@ export function renderRecordingCard({ recording, course, meta = 'course', now = 
           style: `background: var(--course-${course.color})`,
         }),
         createElement('span', { text: metaText }),
-        createElement('span', { 'aria-hidden': 'true', text: ' · ' }),
+        createElement('span', {
+          className: 'recording-card-separator',
+          'aria-hidden': 'true',
+          text: '·',
+        }),
         createElement('span', { text: formatDuration(recording.durationSeconds) }),
       ]),
     ]

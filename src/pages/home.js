@@ -7,6 +7,7 @@ import { renderCourseFolder } from '../components/course-folder.js'
 import { renderRecordingTable } from '../components/recording-table.js'
 
 const quickAccessCount = 4
+const recentCount = 6
 
 /**
  * Build a section with a heading row, an optional link on the right, and a body.
@@ -70,7 +71,7 @@ export function renderHome(_params, { courses, recordings, view, now = new Date(
   )
 
   const recentTable = renderRecordingTable({
-    recordings: newestFirst,
+    recordings: newestFirst.slice(0, recentCount),
     courses,
     caption: 'Recent recordings',
     now,

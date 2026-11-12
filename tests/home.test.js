@@ -74,11 +74,11 @@ describe('renderHome in grid view', () => {
     expect(page.querySelectorAll('.course-folder')).toHaveLength(4)
   })
 
-  it('lists every recording in a captioned table with the mock columns', () => {
+  it('lists the six most recent recordings in a captioned table with the mock columns', () => {
     const table = page.querySelector('.home-section:last-child table')
     expect(table.querySelector('caption').textContent).toBe('Recent recordings')
     expect(textsOf(table, 'thead th')).toEqual(['Name', 'Course', 'Length', 'Date', 'Status'])
-    expect(table.querySelectorAll('tbody tr')).toHaveLength(recordings.length)
+    expect(table.querySelectorAll('tbody tr')).toHaveLength(6)
 
     const firstRow = textsOf(table, 'tbody tr:first-child > *')
     expect(firstRow).toEqual([
