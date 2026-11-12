@@ -2,6 +2,7 @@ import { createElement } from '../lib/dom.js'
 import { startRouter } from './router.js'
 import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
+import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
 
 // titles for routes whose pages arrive in later milestones
 const placeholderTitles = {
@@ -65,16 +66,19 @@ function announcePage(page) {
  * Render the app shell into the root element once, then swap only the page
  * content when the route changes.
  * @param {HTMLElement} root element that receives the app
+ * @param {{ courses?: object[] }} [data] courses shown in the sidebar
  * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement, stopRouter: () => void }}
  *   the content region, a function that shows a parsed route, and one that stops listening
  * @throws {Error} when root is missing or is not an html element
  */
-export function mountApp(root) {
+export function mountApp(root, { courses = [] } = {}) {
   if (!(root instanceof HTMLElement)) {
     throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
 
   const layout = buildLayout()
+  const sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
+  layout.sidebarSlot.append(sidebar)
   root.replaceChildren(layout.shell)
 
   /**
@@ -85,6 +89,7 @@ export function mountApp(root) {
   function showRoute(route) {
     const page = renderPage(route)
     layout.content.replaceChildren(page)
+    setSidebarActive(sidebar, route)
     announcePage(page)
     return page
   }

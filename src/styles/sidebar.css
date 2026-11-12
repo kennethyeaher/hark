@@ -1,0 +1,206 @@
+/* sidebar layout. the parent slot provides the width, background, and separator */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding: var(--space-4);
+}
+
+/* brand link with the mark and wordmark */
+.sidebar .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  align-self: flex-start;
+  padding-left: var(--space-1);
+  color: var(--color-label);
+  text-decoration: none;
+  border-radius: var(--radius-row);
+}
+
+.sidebar .sidebar-mark {
+  flex: none;
+}
+
+/* fills live in css because svg fill attributes do not reliably resolve custom properties */
+.sidebar .sidebar-mark-tile {
+  fill: var(--color-blue);
+}
+
+.sidebar .sidebar-mark-bar {
+  fill: var(--color-on-blue);
+}
+
+.sidebar .sidebar-wordmark {
+  font-size: var(--text-22);
+  font-weight: var(--weight-semibold);
+  line-height: var(--leading-tight);
+}
+
+/* new recording pill */
+.sidebar .sidebar-new-button {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  height: 42px;
+  margin-top: var(--space-4);
+  padding: 0 var(--space-5);
+  background: var(--color-background);
+  color: var(--color-label);
+  font-size: var(--text-15);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-radius: var(--radius-new-button);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar .sidebar-new-button:hover {
+  background: var(--color-fill);
+}
+
+/* primary nav fills the space so the settings row sits at the bottom */
+.sidebar .sidebar-nav {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  margin-top: var(--space-5);
+}
+
+.sidebar .sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar .sidebar-list-bottom {
+  margin-top: auto;
+}
+
+/* shared row shape for nav links and course links */
+.sidebar .sidebar-nav-link,
+.sidebar .sidebar-course-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 34px;
+  padding: 0 10px;
+  color: var(--color-label);
+  font-size: var(--text-15);
+  font-weight: var(--weight-regular);
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-row);
+}
+
+.sidebar .sidebar-nav-link:hover,
+.sidebar .sidebar-course-link:hover {
+  background: var(--color-fill);
+}
+
+.sidebar .sidebar-nav-link .icon {
+  flex: none;
+  color: var(--color-secondary-label);
+}
+
+.sidebar .sidebar-nav-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* active nav row uses the blue tint */
+.sidebar .sidebar-nav-link[aria-current='page'] {
+  background: var(--color-blue-tint);
+  color: var(--color-blue);
+}
+
+.sidebar .sidebar-nav-link[aria-current='page'] .icon {
+  color: var(--color-blue);
+}
+
+/* courses heading */
+.sidebar .sidebar-heading {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-1);
+  padding-left: 10px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-11);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* course rows */
+.sidebar .sidebar-course-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sidebar .sidebar-course-code {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar .sidebar-course-count {
+  flex: none;
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+.sidebar .sidebar-course-link[aria-current='page'] {
+  background: var(--color-background);
+  border-color: var(--color-separator);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.sidebar .sidebar-course-link[aria-current='page'] .sidebar-course-code {
+  font-weight: var(--weight-semibold);
+}
+
+/* storage block */
+.sidebar .sidebar-storage {
+  margin-top: var(--space-4);
+  padding: 0 10px;
+}
+
+.sidebar .sidebar-storage-title {
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+.sidebar .sidebar-meter {
+  height: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+  background: var(--color-separator);
+  border-radius: 3px;
+}
+
+.sidebar .sidebar-meter[hidden] {
+  display: none;
+}
+
+.sidebar .sidebar-meter-fill {
+  width: 0;
+  height: 100%;
+  background: var(--color-blue);
+  border-radius: 3px;
+}
+
+.sidebar .sidebar-storage-detail {
+  margin-top: 6px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+}

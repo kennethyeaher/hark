@@ -47,6 +47,18 @@ describe('mountApp', () => {
     expect(app.content.textContent).toContain('Coming in a later milestone.')
   })
 
+  it('marks the sidebar link for the current route', () => {
+    const root = document.querySelector('#app')
+    app = mountApp(root, {
+      courses: [{ id: 'hcim605', code: 'HCIM 605', color: 'indigo', recordingCount: 12 }],
+    })
+    app.showRoute({ name: 'course', params: { id: 'hcim605' }, query: {} })
+
+    const current = root.querySelectorAll('.app-sidebar [aria-current="page"]')
+    expect(current).toHaveLength(1)
+    expect(current[0].getAttribute('href')).toBe('#/course/hcim605')
+  })
+
   it('sets the document title and focuses the page heading', () => {
     app = mountApp(document.querySelector('#app'))
     app.showRoute({ name: 'trash', params: {}, query: {} })
