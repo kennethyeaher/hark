@@ -3,6 +3,7 @@ import './styles/tokens.css'
 import './styles/base.css'
 import './styles/layout.css'
 import './styles/sidebar.css'
+import './styles/topbar.css'
 import './styles/components.css'
 import { mountApp } from './app/app.js'
 

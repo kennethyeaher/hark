@@ -59,6 +59,18 @@ describe('mountApp', () => {
     expect(current[0].getAttribute('href')).toBe('#/course/hcim605')
   })
 
+  it('puts the search query in the top bar on a search route', () => {
+    const root = document.querySelector('#app')
+    app = mountApp(root)
+    const input = root.querySelector('header [role="search"] input')
+
+    app.showRoute({ name: 'search', params: {}, query: { q: 'bias' } })
+    expect(input.value).toBe('bias')
+
+    app.showRoute({ name: 'home', params: {}, query: {} })
+    expect(input.value).toBe('')
+  })
+
   it('sets the document title and focuses the page heading', () => {
     app = mountApp(document.querySelector('#app'))
     app.showRoute({ name: 'trash', params: {}, query: {} })

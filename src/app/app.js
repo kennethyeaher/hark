@@ -3,6 +3,8 @@ import { startRouter } from './router.js'
 import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
 import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
+import { renderTopbar, setSearchQuery } from '../components/topbar.js'
+import { subscribeToView } from './view.js'
 
 // titles for routes whose pages arrive in later milestones
 const placeholderTitles = {
@@ -79,7 +81,10 @@ export function mountApp(root, { courses = [] } = {}) {
   const layout = buildLayout()
   const sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
   layout.sidebarSlot.append(sidebar)
+  const topbar = renderTopbar()
+  layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
+  let currentRoute = null
 
   /**
    * Render the page for a route into the content region.
@@ -87,13 +92,30 @@ export function mountApp(root, { courses = [] } = {}) {
    * @returns {HTMLElement} the page that was rendered
    */
   function showRoute(route) {
+    currentRoute = route
     const page = renderPage(route)
     layout.content.replaceChildren(page)
     setSidebarActive(sidebar, route)
+    setSearchQuery(topbar, route.name === 'search' ? (route.query.q ?? '') : '')
     announcePage(page)
     return page
   }
 
-  const stopRouter = startRouter(showRoute)
+  // a grid or list switch redraws the page in place, without moving focus off the toggle
+  const stopViewUpdates = subscribeToView(() => {
+    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute))
+  })
+
+  const stopListening = startRouter(showRoute)
+
+  /**
+   * Stop following hash and view changes.
+   * @returns {void}
+   */
+  function stopRouter() {
+    stopListening()
+    stopViewUpdates()
+  }
+
   return { content: layout.content, showRoute, stopRouter }
 }
