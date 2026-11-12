@@ -1,0 +1,56 @@
+/*
+  app shell: a fixed width sidebar on the left and a scrolling column on the
+  right that holds the top bar and the page content.
+*/
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+}
+
+/* the sidebar stays in view while the page scrolls */
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  background: var(--color-grouped);
+  border-right: 1px solid var(--color-separator);
+}
+
+.app-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.app-topbar {
+  padding: 14px var(--content-padding) 0;
+}
+
+.app-content {
+  flex: 1;
+  padding: var(--space-6) var(--content-padding) var(--space-7);
+}
+
+/* the heading gets focus on route change, so only keyboard focus shows a ring */
+.app-content h1:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* shared page pieces used by the placeholder and not found pages */
+.page-title {
+  font-size: var(--text-22);
+  font-weight: var(--weight-semibold);
+}
+
+.page-note {
+  margin-top: var(--space-2);
+  color: var(--color-secondary-label);
+}
+
+.page-link {
+  display: inline-block;
+  margin-top: var(--space-4);
+  font-weight: var(--weight-medium);
+}
