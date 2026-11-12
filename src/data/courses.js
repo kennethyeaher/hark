@@ -1,6 +1,7 @@
 // courses in the indexeddb store: read, list, and save
 
 import { openDatabase } from './db.js'
+import { announceChange } from './events.js'
 import { courseColors } from '../lib/format.js'
 import { assertObject, assertText } from './validate.js'
 
@@ -56,5 +57,6 @@ export async function saveCourse(course) {
   const stored = normalizeCourse(course)
   const database = await openDatabase()
   await database.put('courses', stored)
+  announceChange('courses', stored.id)
   return stored
 }

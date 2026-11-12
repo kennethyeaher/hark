@@ -1,6 +1,7 @@
 // notes in the indexeddb store: one note document per recording
 
 import { abortTransaction, openDatabase } from './db.js'
+import { announceChange } from './events.js'
 import { assertDate, assertObject, assertText } from './validate.js'
 
 /**
@@ -63,6 +64,7 @@ export async function saveNote(note) {
   }
   await transaction.objectStore('notes').put(stored)
   await transaction.done
+  announceChange('notes', stored.recordingId)
   return stored
 }
 
@@ -76,4 +78,5 @@ export async function deleteNote(recordingId) {
   assertText(recordingId, 'recordingId')
   const database = await openDatabase()
   await database.delete('notes', recordingId)
+  announceChange('notes', recordingId)
 }

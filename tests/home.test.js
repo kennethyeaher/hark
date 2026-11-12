@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { renderHome } from '../src/pages/home.js'
 import { renderRecordingTable, renderRecordingStatus } from '../src/components/recording-table.js'
 import { sampleCourses, buildSampleRecordings } from '../src/data/sample.js'
@@ -119,14 +119,59 @@ describe('renderHome in list view', () => {
 })
 
 describe('renderHome with no data', () => {
-  it('renders empty sections without throwing', () => {
-    const page = renderHome({}, { courses: [], recordings: [], view: 'grid', now })
-    expect(page.querySelectorAll('.recording-card')).toHaveLength(0)
-    expect(page.querySelectorAll('tbody tr')).toHaveLength(0)
+  /**
+   * render the empty home page with an optional sample action.
+   * @param {() => Promise<void>} [onLoadSamples] action behind the sample button
+   * @returns {HTMLElement} the page
+   */
+  function renderEmpty(onLoadSamples) {
+    return renderHome({}, { courses: [], recordings: [], view: 'grid', now, onLoadSamples })
+  }
+
+  it('shows one visible heading, the storage line, and the sample button', () => {
+    const page = renderEmpty(async () => {})
+    expect(textsOf(page, 'h2')).toEqual(['No lectures yet'])
+    expect(page.querySelector('h1').className).toBe('visually-hidden')
+    expect(page.textContent).toContain('Recordings stay in this browser')
+    const button = page.querySelector('button')
+    expect(button.textContent).toBe('Try with sample lectures')
+    expect(button.getAttribute('type')).toBe('button')
+    expect(page.querySelectorAll('.recording-card, .course-folder, table')).toHaveLength(0)
   })
 
-  it('rejects missing arrays', () => {
+  it('calls the sample action once, even on a double click', async () => {
+    let finish
+    const onLoadSamples = vi.fn(() => new Promise((resolve) => (finish = resolve)))
+    const page = renderEmpty(onLoadSamples)
+    const button = page.querySelector('button')
+    button.click()
+    button.click()
+    expect(onLoadSamples).toHaveBeenCalledTimes(1)
+    expect(button.getAttribute('aria-disabled')).toBe('true')
+    finish()
+    await vi.waitFor(() => expect(button.hasAttribute('aria-disabled')).toBe(false))
+  })
+
+  it('shows the reason on screen when the samples fail to load', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const page = renderEmpty(() => Promise.reject(new Error('quota exceeded')))
+    page.querySelector('button').click()
+    const status = page.querySelector('[role="status"]')
+    await vi.waitFor(() => expect(status.textContent).toContain('quota exceeded'))
+    expect(status.classList.contains('is-error')).toBe(true)
+    expect(consoleError).toHaveBeenCalledOnce()
+    consoleError.mockRestore()
+  })
+
+  it('shows the full page when there are courses but no recordings', () => {
+    const page = renderHome({}, { courses: sampleCourses, recordings: [], view: 'grid', now })
+    expect(page.querySelectorAll('.course-folder')).toHaveLength(4)
+    expect(page.textContent).not.toContain('No lectures yet')
+  })
+
+  it('rejects missing arrays and an action that is not a function', () => {
     expect(() => renderHome({}, { view: 'grid' })).toThrow(/arrays/)
+    expect(() => renderEmpty('seed')).toThrow(/onLoadSamples to be a function/)
   })
 })
 

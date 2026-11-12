@@ -1,6 +1,7 @@
 // moments in the indexeddb store: marked points in time inside a recording
 
 import { abortTransaction, openDatabase } from './db.js'
+import { announceChange } from './events.js'
 import { courseColors } from '../lib/format.js'
 import { assertNonNegativeNumber, assertObject, assertText } from './validate.js'
 
@@ -80,6 +81,7 @@ export async function saveMoment(moment) {
   }
   await transaction.objectStore('moments').put(stored)
   await transaction.done
+  announceChange('moments', stored.id)
   return stored
 }
 
@@ -93,4 +95,5 @@ export async function deleteMoment(id) {
   assertText(id, 'moment id')
   const database = await openDatabase()
   await database.delete('moments', id)
+  announceChange('moments', id)
 }

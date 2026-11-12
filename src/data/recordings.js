@@ -1,6 +1,7 @@
 // recordings in the indexeddb store: read, list, save, trash, restore, and delete
 
 import { abortTransaction, openDatabase } from './db.js'
+import { announceChange } from './events.js'
 import { assertDate, assertNonNegativeNumber, assertObject, assertText } from './validate.js'
 
 /** every status a recording can be in, from upload to summary */
@@ -116,6 +117,7 @@ export async function saveRecording(recording) {
   }
   await transaction.objectStore('recordings').put(stored)
   await transaction.done
+  announceChange('recordings', stored.id)
   return stored
 }
 
@@ -138,6 +140,7 @@ async function updateRecording(id, change) {
   const stored = normalizeRecording(change(current))
   await transaction.store.put(stored)
   await transaction.done
+  announceChange('recordings', id)
   return stored
 }
 
@@ -180,4 +183,5 @@ export async function deleteRecordingForever(id) {
     ...momentIds.map((momentId) => transaction.objectStore('moments').delete(momentId)),
     transaction.done,
   ])
+  announceChange('recordings', id)
 }

@@ -1,4 +1,5 @@
 import { createElement } from '../lib/dom.js'
+import { describeFocus, restoreFocus } from '../lib/focus.js'
 import { startRouter } from './router.js'
 import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
@@ -29,7 +30,8 @@ const placeholderTitles = {
 /**
  * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
- * @param {{ courses: object[], recordings: object[] }} data app data passed to built pages
+ * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void> }} data
+ *   app data and actions passed to built pages
  * @returns {HTMLElement} the page to show in the content area
  */
 function renderPage(route, data) {
@@ -92,25 +94,28 @@ function announcePage(page, shouldMoveFocus) {
  * render the app shell into the root element once, then swap only the page
  * content when the route changes.
  * @param {HTMLElement} root element that receives the app
- * @param {{ courses?: object[], recordings?: object[] }} [data] courses and recordings to show
- * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement, stopRouter: () => void }}
- *   the content region, a function that shows a parsed route, and one that stops listening
+ * @param {{ courses?: object[], recordings?: object[], onLoadSamples?: () => Promise<void> }} [data]
+ *   courses and recordings to show, and the action behind the empty state's sample button
+ * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement,
+ *   updateData: (next: { courses: object[], recordings: object[] }) => void, stopRouter: () => void }}
+ *   the content region, a function that shows a parsed route, one that redraws with new data,
+ *   and one that stops listening
  * @throws {Error} when root is missing or is not an html element
  */
-export function mountApp(root, { courses = [], recordings = [] } = {}) {
+export function mountApp(root, { courses = [], recordings = [], onLoadSamples } = {}) {
   if (!(root instanceof HTMLElement)) {
     throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
 
   const layout = buildLayout()
-  const sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
+  let sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
   layout.sidebarSlot.append(sidebar)
   const topbar = renderTopbar()
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
   let hasShownPage = false
-  const data = { courses, recordings }
+  const data = { courses, recordings, onLoadSamples }
 
   /**
    * render the page for a route into the content region.
@@ -133,6 +138,33 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
     if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
   })
 
+  /**
+   * redraw the sidebar and the current page with new data, keeping focus where it was.
+   * @param {{ courses: object[], recordings: object[] }} next the reloaded library
+   * @returns {void}
+   * @throws {TypeError} when courses or recordings is not an array
+   */
+  function updateData(next) {
+    if (!Array.isArray(next?.courses) || !Array.isArray(next?.recordings)) {
+      throw new TypeError('updateData needs courses and recordings arrays')
+    }
+    data.courses = next.courses
+    data.recordings = next.recordings
+    // the top bar is not redrawn, so only focus in the sidebar or the page needs to be found again
+    const sidebarFocus = describeFocus(layout.sidebarSlot)
+    const contentFocus = describeFocus(layout.content)
+
+    const activeRoute = currentRoute ?? { name: 'home', params: {}, query: {} }
+    const nextSidebar = renderSidebar({ courses: data.courses, activeRoute })
+    sidebar.replaceWith(nextSidebar)
+    sidebar = nextSidebar
+    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
+
+    // the old focused element may be gone, so find its rebuilt copy or fall back to the content
+    restoreFocus(layout.sidebarSlot, sidebarFocus, layout.content)
+    restoreFocus(layout.content, contentFocus, layout.content)
+  }
+
   const stopListening = startRouter(showRoute)
 
   /**
@@ -145,5 +177,5 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
     destroyTopbar(topbar)
   }
 
-  return { content: layout.content, showRoute, stopRouter }
+  return { content: layout.content, showRoute, updateData, stopRouter }
 }
