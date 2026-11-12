@@ -1,7 +1,7 @@
 // course page: tinted header, filter chips, sort, and the course's recordings
 
 import { createElement, createIcon } from '../lib/dom.js'
-import { formatDuration } from '../lib/format.js'
+import { assertCourse, formatDuration, formatRecordingCount } from '../lib/format.js'
 import {
   filterRecordings,
   recordingFilters,
@@ -18,18 +18,32 @@ const folderIconPaths = [
 const plusIconPaths = ['M12 5v14', 'M5 12h14']
 const chevronDownPaths = ['M6 9l6 6 6-6']
 
+// filter and sort per course id, so a grid or list switch redraws the page without resetting them
+const choicesByCourseId = new Map()
+
+/**
+ * Forget every remembered filter and sort, so each course opens on All and Newest again.
+ * @returns {void}
+ */
+export function clearCourseChoices() {
+  choicesByCourseId.clear()
+}
+
 /**
  * Build the tinted course header with the folder tile, names, totals, and the New recording link.
  * @param {{ code: string, name: string, color: string, recordingCount: number, totalSeconds: number }} course course data
  * @returns {HTMLElement} the header element
+ * @throws {TypeError} when the course is missing a field the header reads
  */
 function renderCourseHeader(course) {
+  assertCourse(course, 'renderCourse')
+  if (typeof course.name !== 'string' || !Number.isFinite(course.totalSeconds)) {
+    throw new TypeError(`renderCourse needs course ${course.id} to have a name and totalSeconds`)
+  }
   const tile = createElement('span', { className: 'course-header-tile', 'aria-hidden': 'true' }, [
     createIcon(folderIconPaths, { size: 26 }),
   ])
   tile.style.background = `var(--course-${course.color})`
-  const noun = course.recordingCount === 1 ? 'recording' : 'recordings'
-
   const header = createElement('div', { className: 'course-header' }, [
     tile,
     createElement('div', { className: 'course-header-text' }, [
@@ -38,7 +52,7 @@ function renderCourseHeader(course) {
         course.name,
         createElement('span', { 'aria-hidden': 'true', text: ' · ' }),
         createElement('span', { className: 'visually-hidden', text: ', ' }),
-        `${course.recordingCount} ${noun}`,
+        formatRecordingCount(course.recordingCount),
         createElement('span', { 'aria-hidden': 'true', text: ' · ' }),
         createElement('span', { className: 'visually-hidden', text: ', ' }),
         formatDuration(course.totalSeconds),
@@ -59,7 +73,7 @@ function renderCourseHeader(course) {
  * @param {{ courses: object[], recordings: object[], view: 'grid' | 'list', now?: Date }} context
  *   app data, the current view, and the current time
  * @returns {HTMLElement} the page, or the not found page when the id is unknown
- * @throws {TypeError} when courses or recordings are not arrays
+ * @throws {TypeError} when courses or recordings are not arrays, or the course is malformed
  */
 export function renderCourse({ id }, { courses, recordings, view, now = new Date() }) {
   if (!Array.isArray(courses) || !Array.isArray(recordings)) {
@@ -69,20 +83,38 @@ export function renderCourse({ id }, { courses, recordings, view, now = new Date
   if (!course) {
     return renderNotFound({ path: `/course/${id}` })
   }
+  const header = renderCourseHeader(course)
   const courseRecordings = recordings.filter((recording) => recording.courseId === course.id)
-  let activeFilter = 'all'
-  let activeSort = 'newest'
+  const recordingsHeading = createElement('h2', {
+    className: 'visually-hidden',
+    text: 'Recordings',
+  })
+
+  // a course with nothing in it gets one line and no filter controls
+  if (courseRecordings.length === 0) {
+    return createElement('div', { className: 'page page-course' }, [
+      header,
+      recordingsHeading,
+      createElement('p', {
+        className: 'empty-note course-empty',
+        text: 'No recordings in this course yet.',
+      }),
+    ])
+  }
+
+  const choices = choicesByCourseId.get(course.id) ?? { filter: 'all', sort: 'newest' }
+  choicesByCourseId.set(course.id, choices)
 
   // chips are a button group, exactly one is pressed
   const chipButtons = recordingFilters.map((filter) => {
     const button = createElement('button', {
       type: 'button',
       className: 'chip',
-      'aria-pressed': String(filter.id === activeFilter),
+      'aria-pressed': String(filter.id === choices.filter),
       text: filter.label,
     })
     button.addEventListener('click', () => {
-      activeFilter = filter.id
+      choices.filter = filter.id
       for (const chip of chipButtons) {
         chip.setAttribute('aria-pressed', String(chip === button))
       }
@@ -102,8 +134,9 @@ export function renderCourse({ id }, { courses, recordings, view, now = new Date
     { className: 'sort-select', id: 'course-sort' },
     recordingSorts.map((sort) => createElement('option', { value: sort.id, text: sort.label }))
   )
+  sortSelect.value = choices.sort
   sortSelect.addEventListener('change', () => {
-    activeSort = sortSelect.value
+    choices.sort = sortSelect.value
     updateResults()
   })
   const sortControl = createElement('div', { className: 'sort-control' }, [
@@ -120,8 +153,11 @@ export function renderCourse({ id }, { courses, recordings, view, now = new Date
    * @returns {void}
    */
   function updateResults() {
-    const shown = sortRecordings(filterRecordings(courseRecordings, activeFilter, now), activeSort)
-    status.textContent = `${shown.length} ${shown.length === 1 ? 'recording' : 'recordings'} shown`
+    const shown = sortRecordings(
+      filterRecordings(courseRecordings, choices.filter, now),
+      choices.sort
+    )
+    status.textContent = `${formatRecordingCount(shown.length)} shown`
     if (shown.length === 0) {
       results.replaceChildren(
         createElement('p', { className: 'empty-note', text: 'No recordings match this filter.' })
@@ -148,7 +184,8 @@ export function renderCourse({ id }, { courses, recordings, view, now = new Date
   updateResults()
 
   return createElement('div', { className: 'page page-course' }, [
-    renderCourseHeader(course),
+    header,
+    recordingsHeading,
     createElement('div', { className: 'course-toolbar' }, [chipGroup, sortControl]),
     results,
     status,

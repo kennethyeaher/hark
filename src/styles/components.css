@@ -76,6 +76,18 @@
   margin: 0 6px;
 }
 
+/* a long course code shortens with an ellipsis, the duration always shows in full */
+.recording-card-meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recording-card-separator,
+.recording-card-duration {
+  flex: none;
+}
+
 .recording-card-dot {
   flex: none;
   width: 8px;
@@ -123,7 +135,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  height: 76px;
+  min-height: 76px;
   padding: 0 var(--space-4);
   color: var(--color-label);
   background: color-mix(in srgb, var(--course-folder-color) 8%, var(--color-background));
@@ -156,6 +168,13 @@
   gap: 2px;
 }
 
+.course-folder-code,
+.course-folder-count {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .course-folder-code {
   font-size: var(--text-15);
   font-weight: var(--weight-semibold);
@@ -181,6 +200,12 @@
 .table-scroll {
   overflow-x: auto;
   border-radius: var(--radius-row);
+}
+
+/* the scroll box clips anything outside it, so rings inside the table draw inward */
+.recording-table-link:focus-visible,
+.table-scroll:focus-visible {
+  outline-offset: -2px;
 }
 
 .recording-table {
@@ -232,7 +257,9 @@
 }
 
 .recording-table td.recording-table-course {
+  overflow: hidden;
   color: var(--color-label);
+  text-overflow: ellipsis;
 }
 
 .recording-table tbody tr:hover {

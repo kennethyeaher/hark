@@ -78,11 +78,18 @@ function renderRow(recording, course, now) {
         },
         [
           renderRecordingIcon({ recording, course }),
-          createElement('span', { className: 'recording-table-title', text: recording.title }),
+          createElement('span', {
+            className: 'recording-table-title',
+            text: recording.title,
+            title: recording.title,
+          }),
         ]
       ),
     ]),
-    createElement('td', { className: 'recording-table-course' }, [dot, course.code]),
+    createElement('td', { className: 'recording-table-course', title: course.code }, [
+      dot,
+      course.code,
+    ]),
     createElement('td', { text: formatDuration(recording.durationSeconds) }),
     createElement('td', { text: formatRelativeDate(recording.recordedAt, now) }),
     createElement('td', {}, [renderRecordingStatus(recording)]),

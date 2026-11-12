@@ -3,7 +3,7 @@ import { startRouter } from './router.js'
 import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
 import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
-import { renderTopbar, setSearchQuery } from '../components/topbar.js'
+import { destroyTopbar, renderTopbar, setSearchQuery } from '../components/topbar.js'
 import { getView, subscribeToView } from './view.js'
 import { renderHome } from '../pages/home.js'
 import { renderCourse } from '../pages/course.js'
@@ -50,8 +50,21 @@ function renderPage(route, data) {
 function buildLayout() {
   const sidebarSlot = createElement('div', { className: 'app-sidebar' })
   const topbarSlot = createElement('header', { className: 'app-topbar' })
-  const content = createElement('main', { id: 'content', className: 'app-content' })
+  const content = createElement('main', { id: 'content', className: 'app-content', tabindex: -1 })
+
+  // skip link: the hash belongs to the router, so the click moves focus itself instead of navigating
+  const skipLink = createElement('a', {
+    className: 'skip-link',
+    href: '#content',
+    text: 'Skip to content',
+  })
+  skipLink.addEventListener('click', (event) => {
+    event.preventDefault()
+    content.focus()
+  })
+
   const shell = createElement('div', { className: 'app-shell' }, [
+    skipLink,
     sidebarSlot,
     createElement('div', { className: 'app-main' }, [topbarSlot, content]),
   ])
@@ -123,12 +136,13 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
   const stopListening = startRouter(showRoute)
 
   /**
-   * Stop following hash and view changes.
+   * Stop following hash and view changes, and release the top bar's view subscription.
    * @returns {void}
    */
   function stopRouter() {
     stopListening()
     stopViewUpdates()
+    destroyTopbar(topbar)
   }
 
   return { content: layout.content, showRoute, stopRouter }

@@ -8,6 +8,29 @@
   min-height: 100dvh;
 }
 
+/* skip link: hidden until keyboard focus, then shown over the top left corner */
+.skip-link {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 10;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-background);
+  border-radius: var(--radius-row);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 16%);
+  font-weight: var(--weight-medium);
+  transform: translateY(-200%);
+}
+
+.skip-link:focus-visible {
+  transform: none;
+}
+
+/* main takes focus from the skip link only, so it shows no ring */
+.app-content:focus {
+  outline: none;
+}
+
 /* the sidebar stays in view while the page scrolls */
 .app-sidebar {
   position: sticky;

@@ -79,3 +79,45 @@ export function formatRelativeDate(date, now = new Date()) {
   const label = `${monthNames[date.getMonth()]} ${date.getDate()}`
   return date.getFullYear() === now.getFullYear() ? label : `${label}, ${date.getFullYear()}`
 }
+
+const countFormatter = new Intl.NumberFormat('en-US')
+
+/**
+ * Format a count of recordings with a thousands separator and the right plural.
+ * @param {number} count whole number of recordings, zero or more
+ * @returns {string} text such as `1 recording` or `12,000 recordings`
+ * @throws {RangeError} when count is not a whole number of zero or more
+ */
+export function formatRecordingCount(count) {
+  if (!Number.isInteger(count) || count < 0) {
+    throw new RangeError(`count must be a whole number of zero or more, got ${String(count)}`)
+  }
+  return `${countFormatter.format(count)} ${count === 1 ? 'recording' : 'recordings'}`
+}
+
+/**
+ * Check that a course has the fields every course view reads.
+ * @param {unknown} course value to check
+ * @param {string} caller name of the function asking, used in the error message
+ * @returns {void}
+ * @throws {TypeError} when the course or one of its fields is missing or invalid
+ */
+export function assertCourse(course, caller) {
+  if (course === null || typeof course !== 'object') {
+    throw new TypeError(`${caller} needs a course object, got ${String(course)}`)
+  }
+  if (typeof course.id !== 'string' || course.id === '') {
+    throw new TypeError(`${caller} needs a course with a non empty string id`)
+  }
+  if (typeof course.code !== 'string' || course.code === '') {
+    throw new TypeError(`${caller} needs course ${course.id} to have a non empty code`)
+  }
+  if (!courseColors.includes(course.color)) {
+    throw new TypeError(
+      `${caller} needs course ${course.id} to have a color of ${courseColors.join(', ')}`
+    )
+  }
+  if (!Number.isInteger(course.recordingCount) || course.recordingCount < 0) {
+    throw new TypeError(`${caller} needs course ${course.id} to have a recordingCount of 0 or more`)
+  }
+}

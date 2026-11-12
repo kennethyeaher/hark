@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { courseColors, formatDuration, formatRelativeDate } from '../src/lib/format.js'
+import {
+  assertCourse,
+  courseColors,
+  formatDuration,
+  formatRecordingCount,
+  formatRelativeDate,
+} from '../src/lib/format.js'
 
 describe('formatDuration', () => {
   it.each([
@@ -68,5 +74,33 @@ describe('formatRelativeDate', () => {
 describe('courseColors', () => {
   it('lists the four course colors', () => {
     expect(courseColors).toEqual(['indigo', 'teal', 'orange', 'pink'])
+  })
+})
+
+describe('formatRecordingCount', () => {
+  it('uses the singular for one and separates thousands', () => {
+    expect(formatRecordingCount(0)).toBe('0 recordings')
+    expect(formatRecordingCount(1)).toBe('1 recording')
+    expect(formatRecordingCount(12000)).toBe('12,000 recordings')
+  })
+
+  it('rejects counts that are not whole numbers of zero or more', () => {
+    expect(() => formatRecordingCount(-1)).toThrow(RangeError)
+    expect(() => formatRecordingCount(1.5)).toThrow(/whole number/)
+  })
+})
+
+describe('assertCourse', () => {
+  const course = { id: 'c1', code: 'INST 360', color: 'teal', recordingCount: 3 }
+
+  it('accepts a complete course', () => {
+    expect(() => assertCourse(course, 'test')).not.toThrow()
+  })
+
+  it('names the caller and the bad field', () => {
+    expect(() => assertCourse(null, 'renderThing')).toThrow(/renderThing needs a course object/)
+    expect(() => assertCourse({ ...course, code: '' }, 'test')).toThrow(/non empty code/)
+    expect(() => assertCourse({ ...course, color: 'blue' }, 'test')).toThrow(/color of/)
+    expect(() => assertCourse({ ...course, recordingCount: -2 }, 'test')).toThrow(/0 or more/)
   })
 })

@@ -112,6 +112,18 @@ describe('mountApp', () => {
     expect(app.content.querySelector('h1').textContent).toBe('Starred')
   })
 
+  it('has a skip link that moves focus to main without changing the route', () => {
+    window.location.hash = '#/trash'
+    const root = document.querySelector('#app')
+    app = mountApp(root)
+    const skipLink = root.querySelector('.skip-link')
+
+    expect(root.querySelector('.app-shell').firstElementChild).toBe(skipLink)
+    skipLink.click()
+    expect(document.activeElement).toBe(app.content)
+    expect(window.location.hash).toBe('#/trash')
+  })
+
   it('throws a clear error when the root is missing', () => {
     expect(() => mountApp(null)).toThrow(/root element/)
   })

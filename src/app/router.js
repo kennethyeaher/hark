@@ -94,6 +94,10 @@ export function startRouter(onChange) {
     throw new TypeError(`startRouter needs a function, and got ${String(onChange)}`)
   }
 
+  /**
+   * Parse the current hash and hand the route to onChange.
+   * @returns {void}
+   */
   const handleHashChange = () => onChange(parseRoute(window.location.hash))
   window.addEventListener('hashchange', handleHashChange)
   handleHashChange()

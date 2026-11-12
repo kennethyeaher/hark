@@ -15,6 +15,15 @@ const viewOptions = [
 ]
 
 /**
+ * Send the browser to a hash route.
+ * @param {string} hash target such as `#/search?q=bias`
+ * @returns {void}
+ */
+function navigateToHash(hash) {
+  window.location.hash = hash
+}
+
+/**
  * Build the top bar with the search form and the view toggle.
  * The bar lives for the whole app, but `destroyTopbar` removes its view subscription.
  * @param {{ navigate?: (hash: string) => void, initialQuery?: string, viewStore?: { getView: () => string, setView: (view: string) => void, subscribeToView: (listener: (view: string) => void) => () => void } }} [options]
@@ -23,9 +32,7 @@ const viewOptions = [
  * @throws {TypeError} when navigate is not a function or initialQuery is not a string
  */
 export function renderTopbar({
-  navigate = (hash) => {
-    window.location.hash = hash
-  },
+  navigate = navigateToHash,
   initialQuery = '',
   viewStore = { getView, setView, subscribeToView },
 } = {}) {

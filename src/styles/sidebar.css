@@ -159,6 +159,11 @@
   font-size: var(--text-13);
 }
 
+/* the gray count measures 4.42 to 1 on the fill hover background, so it turns label color there */
+.sidebar .sidebar-course-link:hover .sidebar-course-count {
+  color: var(--color-label);
+}
+
 .sidebar .sidebar-course-link[aria-current='page'] {
   background: var(--color-background);
   border-color: var(--color-separator);

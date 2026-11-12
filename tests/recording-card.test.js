@@ -104,7 +104,7 @@ describe('renderCourseFolder', () => {
     expect(() => renderCourseFolder({ course: null })).toThrow(TypeError)
     expect(() => renderCourseFolder({ course: { ...course, color: 'blue' } })).toThrow(TypeError)
     expect(() => renderCourseFolder({ course: { ...course, recordingCount: -1 } })).toThrow(
-      RangeError
+      /recordingCount of 0 or more/
     )
   })
 })

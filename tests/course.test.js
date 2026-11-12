@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from 'vitest'
-import { renderCourse } from '../src/pages/course.js'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { renderCourse, clearCourseChoices } from '../src/pages/course.js'
 import { sampleCourses, buildSampleRecordings } from '../src/data/sample.js'
 
 // a fixed afternoon so the week filter and the dates are stable
 const now = new Date(2026, 9, 28, 15)
 const context = { courses: sampleCourses, recordings: buildSampleRecordings(now), now }
+
+beforeEach(() => clearCourseChoices())
 
 /**
  * Render the HCIM 605 page in a view.
@@ -117,6 +119,51 @@ describe('course recordings', () => {
     expect(page.querySelector('.recording-card')).toBeNull()
     expect(page.querySelector('caption').textContent).toBe('HCIM 605 recordings')
     expect(page.querySelectorAll('tbody tr')).toHaveLength(8)
+  })
+})
+
+describe('remembered choices and edge cases', () => {
+  it('keeps the filter and sort when the page is drawn again for a view switch', () => {
+    const gridPage = renderHcim('grid')
+    clickChip(gridPage, 'Starred')
+    const select = gridPage.querySelector('select')
+    select.value = 'oldest'
+    select.dispatchEvent(new Event('change'))
+
+    const listPage = renderHcim('list')
+    expect(listPage.querySelector('.chip[aria-pressed="true"]').textContent).toBe('Starred')
+    expect(listPage.querySelector('select').value).toBe('oldest')
+    expect(listPage.querySelectorAll('tbody tr')).toHaveLength(2)
+  })
+
+  it('shows one line and no filters for a course with no recordings', () => {
+    const emptyCourse = { ...sampleCourses[0], id: 'empty', recordingCount: 0 }
+    const page = renderCourse(
+      { id: 'empty' },
+      { ...context, courses: [...sampleCourses, emptyCourse], view: 'grid' }
+    )
+    expect(page.querySelector('.chip')).toBeNull()
+    expect(page.textContent).toContain('No recordings in this course yet.')
+  })
+
+  it('puts an h2 between the h1 and the card headings', () => {
+    const page = renderHcim()
+    expect([...page.querySelectorAll('h1, h2, h3')].slice(0, 3).map((h) => h.tagName)).toEqual([
+      'H1',
+      'H2',
+      'H3',
+    ])
+  })
+
+  it('rejects a course with a bad color or no total length', () => {
+    const broken = [{ ...sampleCourses[0], color: 'blue' }]
+    expect(() => renderCourse({ id: 'hcim605' }, { ...context, courses: broken })).toThrow(
+      /color of/
+    )
+    const noTotal = [{ ...sampleCourses[0], totalSeconds: undefined }]
+    expect(() => renderCourse({ id: 'hcim605' }, { ...context, courses: noTotal })).toThrow(
+      /totalSeconds/
+    )
   })
 })
 

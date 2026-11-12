@@ -1,6 +1,7 @@
 // sidebar for the app shell: brand, new button, primary navigation, courses, storage
 
 import { createElement, createIcon, createSvgElement } from '../lib/dom.js'
+import { assertCourse, formatRecordingCount } from '../lib/format.js'
 
 // icon path data on a 24 unit grid, one string per path
 const iconPaths = {
@@ -38,7 +39,6 @@ const mainLinks = [
 
 const settingsLink = { key: 'settings', label: 'Settings', href: '#/settings' }
 
-const courseColors = ['indigo', 'teal', 'orange', 'pink']
 const bytesPerKilobyte = 1024
 
 /**
@@ -51,23 +51,7 @@ function validateCourses(courses) {
   if (!Array.isArray(courses)) {
     throw new TypeError('renderSidebar needs courses to be an array')
   }
-  courses.forEach((course, index) => {
-    if (course === null || typeof course !== 'object') {
-      throw new TypeError(`course at index ${index} must be an object`)
-    }
-    if (typeof course.id !== 'string' || course.id === '') {
-      throw new TypeError(`course at index ${index} needs a non empty string id`)
-    }
-    if (typeof course.code !== 'string' || course.code === '') {
-      throw new TypeError(`course at index ${index} needs a non empty string code`)
-    }
-    if (!courseColors.includes(course.color)) {
-      throw new TypeError(`course ${course.id} needs a color of ${courseColors.join(', ')}`)
-    }
-    if (!Number.isInteger(course.recordingCount) || course.recordingCount < 0) {
-      throw new TypeError(`course ${course.id} needs a recordingCount of 0 or more`)
-    }
-  })
+  for (const course of courses) assertCourse(course, 'renderSidebar')
 }
 
 /**
@@ -85,15 +69,6 @@ export function formatBytes(bytes) {
   const megabytes = kilobytes / bytesPerKilobyte
   if (megabytes < bytesPerKilobyte) return `${megabytes.toFixed(1)} MB`
   return `${(megabytes / bytesPerKilobyte).toFixed(1)} GB`
-}
-
-/**
- * Build the text for a number of recordings with the right plural.
- * @param {number} count number of recordings
- * @returns {string} text such as `1 recording` or `38 recordings`
- */
-function formatRecordingCount(count) {
-  return `${count} ${count === 1 ? 'recording' : 'recordings'}`
 }
 
 /**
@@ -156,7 +131,8 @@ function createNavItem(link) {
  * @returns {HTMLLIElement} list item holding the link
  */
 function createCourseItem(course) {
-  const unit = course.recordingCount === 1 ? ' recording' : ' recordings'
+  // the number shows on screen and the noun is read aloud, so the row reads as 12 recordings
+  const [countNumber, countNoun] = formatRecordingCount(course.recordingCount).split(' ')
   const anchor = createElement('a', {
     className: 'sidebar-course-link',
     href: `#/course/${encodeURIComponent(course.id)}`,
@@ -166,10 +142,14 @@ function createCourseItem(course) {
   dot.style.backgroundColor = `var(--course-${course.color})`
   anchor.append(
     dot,
-    createElement('span', { className: 'sidebar-course-code', text: course.code }),
+    createElement('span', {
+      className: 'sidebar-course-code',
+      text: course.code,
+      title: course.code,
+    }),
     createElement('span', { className: 'sidebar-course-count' }, [
-      String(course.recordingCount),
-      createElement('span', { className: 'visually-hidden', text: unit }),
+      countNumber,
+      createElement('span', { className: 'visually-hidden', text: ` ${countNoun}` }),
     ])
   )
   return createElement('li', { className: 'sidebar-item' }, [anchor])
@@ -329,10 +309,15 @@ export function renderSidebar({ courses, activeRoute }) {
 
   // main list and course list share one primary nav
   const mainList = createElement('ul', { className: 'sidebar-list' }, mainLinks.map(createNavItem))
-  const courseHeading = createElement('h2', { className: 'sidebar-heading', text: 'Courses' })
+  // a plain label, not a heading, so the page h1 stays the first heading in the document
+  const courseHeading = createElement('p', {
+    className: 'sidebar-heading',
+    id: 'sidebar-courses-heading',
+    text: 'Courses',
+  })
   const courseList = createElement(
     'ul',
-    { className: 'sidebar-list' },
+    { className: 'sidebar-list', 'aria-labelledby': 'sidebar-courses-heading' },
     courses.map(createCourseItem)
   )
   const settingsList = createElement('ul', { className: 'sidebar-list sidebar-list-bottom' }, [

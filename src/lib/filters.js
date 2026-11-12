@@ -69,7 +69,7 @@ export function filterRecordings(recordings, filterId, now = new Date()) {
   const weekStart = startOfDay(now)
   weekStart.setDate(weekStart.getDate() - 6)
 
-  // one predicate per chip
+  // one predicate per chip, each taking a recording and returning whether it stays
   const predicates = {
     all: () => true,
     thisWeek: (recording) => recording.recordedAt >= weekStart,

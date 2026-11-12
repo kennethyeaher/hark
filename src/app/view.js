@@ -23,7 +23,11 @@ export function createViewStore(storage) {
   const listeners = new Set()
   let currentView = null
 
-  // reads the saved view once. storage can throw in private mode or when blocked, so fall back
+  /**
+   * Read the saved view, falling back to grid when storage throws or holds a bad value.
+   * storage can throw in private mode or when blocked, so the catch is deliberate.
+   * @returns {string} `grid` or `list`
+   */
   const readSavedView = () => {
     try {
       const saved = storage.getItem(storageKey)
@@ -83,7 +87,19 @@ export function createViewStore(storage) {
 
 // reaches localStorage lazily because even reading the property can throw when blocked
 const browserStorage = {
+  /**
+   * Read one value from localStorage.
+   * @param {string} key storage key
+   * @returns {string | null} the stored value, or null when missing
+   */
   getItem: (key) => window.localStorage.getItem(key),
+  /**
+   * Write one value to localStorage.
+   * @param {string} key storage key
+   * @param {string} value value to store
+   * @returns {void}
+   * @throws {DOMException} when storage is blocked or full
+   */
   setItem: (key, value) => window.localStorage.setItem(key, value),
 }
 

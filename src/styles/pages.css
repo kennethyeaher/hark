@@ -173,3 +173,7 @@
 .empty-note {
   color: var(--color-secondary-label);
 }
+
+.course-empty {
+  margin-top: var(--space-6);
+}

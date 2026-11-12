@@ -59,20 +59,27 @@ export function renderRecordingCard({ recording, course, meta = 'course', now = 
         style: `background: var(--course-${course.color})`,
       }),
       renderWaveform({ seed: recording.id, color: course.color }),
-      createElement('h3', { className: 'recording-card-title', text: recording.title }),
+      createElement('h3', {
+        className: 'recording-card-title',
+        text: recording.title,
+        title: recording.title,
+      }),
       createElement('p', { className: 'recording-card-meta' }, [
         createElement('span', {
           className: 'recording-card-dot',
           'aria-hidden': 'true',
           style: `background: var(--course-${course.color})`,
         }),
-        createElement('span', { text: metaText }),
+        createElement('span', { className: 'recording-card-meta-text', text: metaText }),
         createElement('span', {
           className: 'recording-card-separator',
           'aria-hidden': 'true',
           text: '·',
         }),
-        createElement('span', { text: formatDuration(recording.durationSeconds) }),
+        createElement('span', {
+          className: 'recording-card-duration',
+          text: formatDuration(recording.durationSeconds),
+        }),
       ]),
     ]
   )
