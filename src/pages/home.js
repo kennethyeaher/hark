@@ -46,7 +46,12 @@ function renderEmptyHome(onLoadSamples) {
     text: 'Try with sample lectures',
   })
   let isLoading = false
-  button.addEventListener('click', async () => {
+
+  /**
+   * add the sample lectures once, and show any failure under the button.
+   * @returns {Promise<void>} resolves once the attempt is over
+   */
+  async function handleClick() {
     if (isLoading || !onLoadSamples) return
     // aria-disabled keeps focus on the button while the samples are written
     isLoading = true
@@ -54,6 +59,8 @@ function renderEmptyHome(onLoadSamples) {
     status.textContent = 'Adding sample lectures…'
     try {
       await onLoadSamples()
+      // the page usually redraws first, but clear the line in case it is still on screen
+      status.textContent = ''
     } catch (error) {
       // the page stays, so the reason goes on screen and in the console instead of a blank state
       status.textContent = `Could not add the sample lectures. ${error.message}`
@@ -63,7 +70,8 @@ function renderEmptyHome(onLoadSamples) {
       isLoading = false
       button.removeAttribute('aria-disabled')
     }
-  })
+  }
+  button.addEventListener('click', handleClick)
 
   // the hidden h1 keeps the tab title as Home, and the one visible heading is the h2
   return createElement('div', { className: 'page page-home page-home-empty' }, [

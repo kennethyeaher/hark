@@ -116,8 +116,10 @@ describe('renderHome with no data', () => {
     button.click()
     expect(onLoadSamples).toHaveBeenCalledTimes(1)
     expect(button.getAttribute('aria-disabled')).toBe('true')
+    expect(page.querySelector('[role="status"]').textContent).toContain('Adding')
     finish()
     await vi.waitFor(() => expect(button.hasAttribute('aria-disabled')).toBe(false))
+    expect(page.querySelector('[role="status"]').textContent).toBe('')
   })
 
   it('shows the reason on screen when the samples fail to load', async () => {

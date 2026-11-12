@@ -133,10 +133,14 @@ export function mountApp(root, { courses = [], recordings = [], onLoadSamples } 
     return page
   }
 
-  // a grid or list switch redraws the page in place, without moving focus off the toggle
-  const stopViewUpdates = subscribeToView(() => {
+  /**
+   * redraw the current page after a grid or list switch, without moving focus off the toggle.
+   * @returns {void}
+   */
+  function redrawForView() {
     if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
-  })
+  }
+  const stopViewUpdates = subscribeToView(redrawForView)
 
   /**
    * redraw the sidebar and the current page with new data, keeping focus where it was.

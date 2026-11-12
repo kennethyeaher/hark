@@ -8,6 +8,9 @@ export const databaseVersion = 2
 // one shared connection, opened on first use
 let databasePromise = null
 
+const blockedMessage =
+  'Hark is open in another tab that is using an older version. Close the other Hark tabs, then reload this page.'
+
 /**
  * create or update the stores for a database that is moving from oldVersion to newVersion.
  * each case adds what its version introduced and falls through to the next one, so a
@@ -48,16 +51,38 @@ export function openDatabase() {
     return Promise.reject(new Error('IndexedDB is not available in this browser'))
   }
 
-  const opening = openDB(databaseName, databaseVersion, {
-    upgrade: upgradeDatabase,
-    // another tab wants a newer version, so let go of this connection instead of blocking it
-    blocking() {
-      closeDatabase()
-    },
-    // the browser closed the connection, so the next call opens a new one
-    terminated() {
-      if (databasePromise === opening) databasePromise = null
-    },
+  const opening = new Promise((resolve, reject) => {
+    let isBlocked = false
+    openDB(databaseName, databaseVersion, {
+      upgrade: upgradeDatabase,
+      /**
+       * an older tab holds the database open and will not let go, so fail with a reason
+       * instead of waiting forever on a blank page.
+       * @returns {void}
+       */
+      blocked() {
+        isBlocked = true
+        reject(new Error(blockedMessage))
+      },
+      /**
+       * another tab wants a newer version, so let go of this connection instead of blocking it.
+       * @returns {void}
+       */
+      blocking() {
+        closeDatabase()
+      },
+      /**
+       * the browser closed the connection, so the next call opens a new one.
+       * @returns {void}
+       */
+      terminated() {
+        if (databasePromise === opening) databasePromise = null
+      },
+    }).then((database) => {
+      // an open that was already reported as blocked is closed when it finally succeeds
+      if (isBlocked) database.close()
+      else resolve(database)
+    }, reject)
   })
   databasePromise = opening
   // a failed open is not kept, so the next call can try again. callers still get the rejection

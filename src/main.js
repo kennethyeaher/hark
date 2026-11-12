@@ -33,36 +33,45 @@ async function startApp(root) {
     return
   }
 
-  // the change event that follows the write redraws the page, so the action returns nothing
-  const app = mountApp(root, {
-    ...library,
-    onLoadSamples: async () => {
-      await seedSampleLibrary()
-    },
-  })
+  /**
+   * write the samples, or reload when another tab already filled the library, so the page
+   * always ends up showing what the store holds.
+   * @returns {Promise<void>} resolves once the samples are written or the page is reloaded
+   */
+  async function loadSamples() {
+    const wasSeeded = await seedSampleLibrary()
+    // a successful write fires a change event that redraws; a skipped one does not
+    if (!wasSeeded) await reload()
+  }
 
-  // writes can come in bursts, so at most one reload runs and one more waits behind it
-  let reloading = null
+  const app = mountApp(root, { ...library, onLoadSamples: loadSamples })
+
+  // writes can come in bursts, so at most one reload runs and one more waits behind it.
+  // the flags are set and cleared without an await in between, so no change is missed
+  let isReloading = false
   let hasPendingReload = false
   /**
    * reload the library and redraw, folding changes that arrive during a reload into one more pass.
-   * @returns {Promise<void>} resolves once the screen shows the latest data
+   * @returns {Promise<void>} resolves once the screen shows the latest data it could read
    */
   async function reload() {
-    if (reloading) {
+    if (isReloading) {
       hasPendingReload = true
-      return reloading
+      return
     }
-    reloading = (async () => {
+    isReloading = true
+    try {
       do {
         hasPendingReload = false
-        app.updateData(await loadLibrary())
+        try {
+          app.updateData(await loadLibrary())
+        } catch (error) {
+          // the page keeps its last good data and the next change tries again, so report and go on
+          console.error('Hark could not reload the library', error)
+        }
       } while (hasPendingReload)
-    })()
-    try {
-      await reloading
     } finally {
-      reloading = null
+      isReloading = false
     }
   }
   dataEvents.addEventListener('change', reload)
