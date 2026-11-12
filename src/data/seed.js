@@ -58,7 +58,11 @@ const noteBodies = new Map([
  */
 function dateBefore(now, daysBefore, hour) {
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysBefore, hour)
-  return date > now ? new Date(now.getFullYear(), now.getMonth(), now.getDate()) : date
+  if (date <= now) return date
+  // early in the day the hour has not come yet, so squeeze the hours into the time since
+  // midnight. a later hour still lands later, which keeps the mock order at any time of day
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return new Date(midnight.getTime() + ((now - midnight) * hour) / 24)
 }
 
 /**

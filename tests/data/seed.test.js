@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useFreshDatabase } from './fresh-database.js'
 import { buildSampleLibrary, seedSampleLibrary } from '../../src/data/seed.js'
-import { loadLibrary } from '../../src/data/library.js'
+import { buildLibrary, loadLibrary } from '../../src/data/library.js'
 import { saveCourse } from '../../src/data/courses.js'
 import { listRecordings } from '../../src/data/recordings.js'
 import { listNotes } from '../../src/data/notes.js'
@@ -29,6 +29,19 @@ describe('buildSampleLibrary', () => {
       expect(week9.recordedAt <= time).toBe(true)
       expect(guestTalk.recordedAt.getDate()).toBe(27)
     }
+  })
+
+  it('keeps the mock order just after midnight, when the sample hours have not come yet', () => {
+    const justAfterMidnight = new Date(2026, 9, 28, 0, 5)
+    const { recordings, courses, notes } = buildSampleLibrary(justAfterMidnight)
+    const [week9, lecture17] = recordings
+    expect(week9.recordedAt > lecture17.recordedAt).toBe(true)
+    const library = buildLibrary({ courses, recordings, notes })
+    expect(library.recordings.slice(0, 2).map((recording) => recording.id)).toEqual([
+      'week9-thematic-analysis',
+      'lecture17-client-side-ml',
+    ])
+    expect(library.courses[0].id).toBe('hcim605')
   })
 
   it('rejects an invalid date', () => {
