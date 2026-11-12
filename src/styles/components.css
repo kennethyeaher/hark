@@ -1,5 +1,329 @@
 /*
-  component styles: sidebar, top bar, recording cards, course folders, chips,
-  the new recording sheet, the transcribing card, and the player. each block
-  arrives with the component it styles in milestone 1 and later.
+  component styles for recording cards, recording icons, course folders, and
+  waveforms. more components add their blocks here in later milestones.
 */
+
+/* waveform: natural width so bars never stretch, capped to the container */
+.waveform {
+  max-width: 100%;
+  height: auto;
+}
+
+/* recording card: fills its grid cell, the page decides the grid */
+.recording-card {
+  position: relative;
+  width: 100%;
+  min-height: 134px;
+  overflow: hidden;
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-card);
+  transition: box-shadow 0.15s ease;
+}
+
+.recording-card:hover {
+  box-shadow: 0 2px 10px rgb(0 0 0 / 8%);
+}
+
+/* the focus ring sits on the card so overflow hidden cannot clip it. the more button keeps its own ring */
+.recording-card:has(.recording-card-link:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.recording-card-link {
+  display: block;
+  min-height: 132px;
+  padding: var(--space-4);
+  padding-top: calc(var(--space-4) + 4px);
+  color: inherit;
+  text-decoration: none;
+}
+
+.recording-card-link:focus-visible {
+  outline: none;
+}
+
+.recording-card-stripe {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+}
+
+.recording-card-title {
+  margin-top: 14px;
+  overflow: hidden;
+  color: var(--color-label);
+  font-size: var(--text-15);
+  font-weight: var(--weight-medium);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recording-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 6px;
+  padding-right: 32px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+  white-space: nowrap;
+}
+
+/* flex rows drop plain spaces, so the separator gets its own margin */
+.recording-card-separator {
+  margin: 0 6px;
+}
+
+/* a long course code shortens with an ellipsis, the duration always shows in full */
+.recording-card-meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recording-card-separator,
+.recording-card-duration {
+  flex: none;
+}
+
+.recording-card-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+}
+
+/* more button sits over the bottom right of the meta line, outside the link */
+.recording-card-more {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--color-secondary-label);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-row);
+}
+
+.recording-card-more:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+
+/* recording icon: small tile for table rows */
+.recording-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--color-fill);
+  border-radius: var(--radius-row);
+}
+
+/* course folder: tinted card, 8 percent keeps secondary text at 4.5:1 */
+.course-folder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 76px;
+  padding: 0 var(--space-4);
+  color: var(--color-label);
+  background: color-mix(in srgb, var(--course-folder-color) 8%, var(--color-background));
+  border: 1px solid transparent;
+  border-radius: var(--radius-card);
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+
+/* hover uses a border because a stronger tint would fail text contrast */
+.course-folder:hover {
+  border-color: color-mix(in srgb, var(--course-folder-color) 35%, transparent);
+}
+
+.course-folder-tile {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: #ffffff;
+  border-radius: 10px;
+}
+
+.course-folder-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.course-folder-code,
+.course-folder-count {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.course-folder-code {
+  font-size: var(--text-15);
+  font-weight: var(--weight-semibold);
+  color: var(--color-label);
+}
+
+.course-folder-count {
+  font-size: var(--text-13);
+  color: var(--color-secondary-label);
+}
+
+.course-folder-chevron {
+  margin-left: auto;
+  flex: none;
+  color: var(--color-secondary-label);
+}
+
+/*
+  recording table: the Recent list on home and the course list view. fixed
+  layout so the columns line up with the mock at every row count.
+*/
+/* narrow windows scroll the table sideways rather than crushing the name column */
+.table-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-row);
+}
+
+/* the scroll box clips anything outside it, so rings inside the table draw inward */
+.recording-table-link:focus-visible,
+.table-scroll:focus-visible {
+  outline-offset: -2px;
+}
+
+.recording-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: var(--text-15);
+}
+
+.recording-table col.recording-table-course {
+  width: 166px;
+}
+
+.recording-table col.recording-table-length,
+.recording-table col.recording-table-date {
+  width: 107px;
+}
+
+.recording-table col.recording-table-status {
+  width: 160px;
+}
+
+.recording-table thead th {
+  height: 32px;
+  padding: 0 var(--space-3) 0 0;
+  border-bottom: 1px solid var(--color-separator);
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+  font-weight: var(--weight-regular);
+  text-align: left;
+}
+
+.recording-table thead th:first-child {
+  padding-left: var(--space-3);
+}
+
+.recording-table tbody th,
+.recording-table td {
+  height: 54px;
+  padding: 0 var(--space-3) 0 0;
+  font-weight: var(--weight-regular);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.recording-table td {
+  color: var(--color-secondary-label);
+}
+
+.recording-table td.recording-table-course {
+  overflow: hidden;
+  color: var(--color-label);
+  text-overflow: ellipsis;
+}
+
+.recording-table tbody tr:hover {
+  background: var(--color-grouped);
+}
+
+.recording-table-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: 0 0 0 var(--space-3);
+  color: var(--color-label);
+  text-decoration: none;
+  border-radius: var(--radius-row);
+}
+
+.recording-table-link:hover .recording-table-title {
+  text-decoration: underline;
+}
+
+.recording-table-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recording-table-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: var(--space-2);
+  border-radius: 50%;
+  vertical-align: 1px;
+}
+
+/* status: green check for summarized, a blue bar and percent while transcribing */
+.recording-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-14);
+}
+
+.recording-status-done {
+  color: var(--color-green-text);
+}
+
+.recording-status-working {
+  gap: var(--space-2);
+  color: var(--color-blue);
+}
+
+.recording-progress {
+  width: 64px;
+  height: 4px;
+  overflow: hidden;
+  background: var(--color-separator);
+  border-radius: 2px;
+}
+
+.recording-progress-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-blue);
+  border-radius: 2px;
+}

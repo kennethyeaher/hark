@@ -108,7 +108,7 @@ Most of the interface uses patterns from *Designing Interfaces* (Tidwell, Brewer
 | Progress card with named steps and a cancel action | Transcription takes minutes; people need to know it is working and that they can stop it | Progress Indicator, Cancelability |
 | Drop zone text explains accepted formats | Say what will work before the user tries | Input Hints |
 
-Two decisions came from accessibility readings rather than the pattern book. The label, secondary label, and blue action colors meet the WCAG 4.5:1 contrast floor on white, which is why the app uses a system blue instead of the navy and gold palette I liked more. Not every color passes yet. On white, pink and green measure about 4.2:1, teal 3.0:1, and orange 2.5:1, so those need darker values or a role that is never text before the build reaches them. And every control will work from the keyboard, since the transcript itself is the accessibility case for the product.
+Two decisions came from accessibility readings rather than the pattern book. The label, secondary label, and blue action colors meet the WCAG 4.5:1 contrast floor on white and on the grouped gray, which is why the app uses a system blue instead of the navy and gold palette I liked more. The first course colors did not all pass, so each course and status color now has two values. The text value meets 4.5:1 and is the only one used for colored text. The shape value meets the 3:1 floor for graphics and colors dots, stripes, folder tiles, and waveforms. A unit test checks every pair against both surfaces. And every control will work from the keyboard, since the transcript itself is the accessibility case for the product.
 
 ## How the machine learning works
 

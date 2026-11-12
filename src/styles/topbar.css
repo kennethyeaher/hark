@@ -1,0 +1,75 @@
+/* top bar: a growing search field and the view toggle */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.topbar-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* the magnifier sits inside the field and ignores clicks so the input gets them */
+.topbar-search-icon {
+  position: absolute;
+  top: 50%;
+  left: var(--space-4);
+  transform: translateY(-50%);
+  color: var(--color-secondary-label);
+  pointer-events: none;
+}
+
+/* grouped background gives the placeholder 4.66 to 1, fill only gives 4.42 to 1 */
+.topbar-input {
+  display: block;
+  width: 100%;
+  height: 38px;
+  padding: 0 var(--space-4) 0 46px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-grouped);
+  box-shadow: inset 0 0 0 1px transparent;
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-15);
+  appearance: none;
+}
+
+.topbar-input:hover {
+  box-shadow: inset 0 0 0 1px var(--color-separator);
+}
+
+.topbar-input::placeholder {
+  color: var(--color-secondary-label);
+  opacity: 1;
+}
+
+.topbar-toggle {
+  display: flex;
+  flex: none;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--color-grouped);
+}
+
+.topbar-toggle-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-row);
+  background: transparent;
+  color: var(--color-secondary-label);
+  cursor: pointer;
+}
+
+.topbar-toggle-button[aria-pressed='true'] {
+  background: var(--color-background);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 12%);
+  color: var(--color-label);
+}
