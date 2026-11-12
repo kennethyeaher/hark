@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from 'vitest'
 import { renderCourse, clearCourseChoices } from '../src/pages/course.js'
-import { sampleCourses, buildSampleRecordings } from '../src/data/sample.js'
+import { buildSampleView } from './sample-library.js'
 
 // a fixed afternoon so the week filter and the dates are stable
 const now = new Date(2026, 9, 28, 15)
-const context = { courses: sampleCourses, recordings: buildSampleRecordings(now), now }
+const { courses: sampleCourses, recordings } = buildSampleView(now)
+const context = { courses: sampleCourses, recordings, now }
 
 beforeEach(() => clearCourseChoices())
 
@@ -42,12 +43,12 @@ function clickChip(page, label) {
 describe('course header', () => {
   const page = renderHcim()
 
-  it('shows the code as the h1 with the name, count, and total length', () => {
+  it('shows the code as the h1 with the name, and the count and length computed from recordings', () => {
     expect(page.querySelector('h1').textContent).toBe('HCIM 605')
     const meta = page.querySelector('.course-header-meta').textContent
     expect(meta).toContain('Qualitative Research Methods')
-    expect(meta).toContain('12 recordings')
-    expect(meta).toContain('9 hr 40 min')
+    expect(meta).toContain('8 recordings')
+    expect(meta).toContain('8 hr 02 min')
   })
 
   it('links New recording to the new route', () => {

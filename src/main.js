@@ -9,6 +9,7 @@ import './styles/pages.css'
 import { mountApp } from './app/app.js'
 import { loadLibrary } from './data/library.js'
 import { dataEvents } from './data/events.js'
+import { seedSampleLibrary } from './data/seed.js'
 import { renderStorageError } from './pages/storage-error.js'
 
 /**
@@ -16,11 +17,14 @@ import { renderStorageError } from './pages/storage-error.js'
  * @param {HTMLElement} root element that receives the app
  * @returns {Promise<void>} resolves once the first page is on screen
  *
- * side effect: reloads the library and redraws the app after every write to the store.
+ * side effect: seeds the samples into an empty library in development, and reloads the
+ * library and redraws the app after every write to the store.
  */
 async function startApp(root) {
   let library
   try {
+    // development starts with the samples so every page has data; production waits for the button
+    if (import.meta.env.DEV) await seedSampleLibrary()
     library = await loadLibrary()
   } catch (error) {
     // without storage nothing can be kept, so say so instead of leaving a blank screen
@@ -29,7 +33,13 @@ async function startApp(root) {
     return
   }
 
-  const app = mountApp(root, library)
+  // the change event that follows the write redraws the page, so the action returns nothing
+  const app = mountApp(root, {
+    ...library,
+    onLoadSamples: async () => {
+      await seedSampleLibrary()
+    },
+  })
 
   // writes can come in bursts, so at most one reload runs and one more waits behind it
   let reloading = null

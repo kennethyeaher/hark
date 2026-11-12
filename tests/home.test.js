@@ -2,11 +2,11 @@
 import { describe, it, expect, vi } from 'vitest'
 import { renderHome } from '../src/pages/home.js'
 import { renderRecordingTable, renderRecordingStatus } from '../src/components/recording-table.js'
-import { sampleCourses, buildSampleRecordings } from '../src/data/sample.js'
+import { buildSampleView } from './sample-library.js'
 
 // a fixed afternoon so every sample date lands on a known label
 const now = new Date(2026, 9, 28, 15)
-const recordings = buildSampleRecordings(now)
+const { courses: sampleCourses, recordings } = buildSampleView(now)
 const context = { courses: sampleCourses, recordings, now }
 
 /**
@@ -18,38 +18,6 @@ const context = { courses: sampleCourses, recordings, now }
 function textsOf(root, selector) {
   return [...root.querySelectorAll(selector)].map((element) => element.textContent.trim())
 }
-
-describe('sample data', () => {
-  it('has the four courses from the mock with shape colors that exist', () => {
-    expect(sampleCourses.map((course) => course.code)).toEqual([
-      'HCIM 605',
-      'INST 360',
-      'INST 737',
-      'INST 711',
-    ])
-    expect(sampleCourses.map((course) => course.name)).toEqual([
-      'Qualitative Research Methods',
-      'Programming Human-Centered Interfaces',
-      'Data Science Techniques',
-      'Interaction Design Studio',
-    ])
-    expect(sampleCourses.reduce((sum, course) => sum + course.recordingCount, 0)).toBe(38)
-  })
-
-  it('keeps Today and Yesterday true whatever time it runs', () => {
-    for (const time of [new Date(2026, 9, 28, 0, 5), new Date(2026, 9, 28, 23, 55)]) {
-      const [week9, lecture17, guestTalk] = buildSampleRecordings(time)
-      expect(week9.recordedAt.getDate()).toBe(28)
-      expect(lecture17.recordedAt.getDate()).toBe(28)
-      expect(week9.recordedAt <= time).toBe(true)
-      expect(guestTalk.recordedAt.getDate()).toBe(27)
-    }
-  })
-
-  it('rejects an invalid date', () => {
-    expect(() => buildSampleRecordings(new Date('nope'))).toThrow(/valid date/)
-  })
-})
 
 describe('renderHome in grid view', () => {
   const page = renderHome({}, { ...context, view: 'grid' })
