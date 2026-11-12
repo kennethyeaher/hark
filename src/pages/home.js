@@ -10,7 +10,7 @@ const quickAccessCount = 4
 const recentCount = 6
 
 /**
- * Build a section with a heading row, an optional link on the right, and a body.
+ * build a section with a heading row, an optional link on the right, and a body.
  * @param {{ title: string, link?: { href: string, text: string, hiddenText: string }, body: HTMLElement }} options
  *   section title, the link with extra screen reader text, and the content
  * @returns {HTMLElement} the section
@@ -32,7 +32,7 @@ function renderSection({ title, link, body }) {
 }
 
 /**
- * Render the home page.
+ * render the home page.
  * @param {object} _params route params, unused on home
  * @param {{ courses: object[], recordings: object[], view: 'grid' | 'list', now?: Date }} context
  *   app data, the current view, and the current time

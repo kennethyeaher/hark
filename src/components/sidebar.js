@@ -42,7 +42,7 @@ const settingsLink = { key: 'settings', label: 'Settings', href: '#/settings' }
 const bytesPerKilobyte = 1024
 
 /**
- * Check that the courses argument is an array of well formed course objects.
+ * check that the courses argument is an array of well formed course objects.
  * @param {unknown} courses value passed to renderSidebar
  * @returns {void}
  * @throws {TypeError} when courses or any course in it is malformed
@@ -55,7 +55,7 @@ function validateCourses(courses) {
 }
 
 /**
- * Format a byte count as KB, MB, or GB for display.
+ * format a byte count as KB, MB, or GB for display.
  * @param {number} bytes number of bytes, 0 or more
  * @returns {string} text such as `512 KB`, `38.5 MB`, or `4.2 GB`
  * @throws {TypeError} when bytes is not a finite number of 0 or more
@@ -72,7 +72,7 @@ export function formatBytes(bytes) {
 }
 
 /**
- * Build the Hark mark as an inline svg copied from the favicon.
+ * build the Hark mark as an inline svg copied from the favicon.
  * @returns {SVGSVGElement} decorative svg element
  */
 function createMark() {
@@ -108,7 +108,7 @@ function createMark() {
 }
 
 /**
- * Build one navigation row with an icon and a label.
+ * build one navigation row with an icon and a label.
  * @param {{ key: string, label: string, href: string }} link row definition
  * @returns {HTMLLIElement} list item holding the link
  */
@@ -126,7 +126,7 @@ function createNavItem(link) {
 }
 
 /**
- * Build one course row with a color dot, the code, and the recording count.
+ * build one course row with a color dot, the code, and the recording count.
  * @param {{ id: string, code: string, color: string, recordingCount: number }} course course data
  * @returns {HTMLLIElement} list item holding the link
  */
@@ -156,7 +156,7 @@ function createCourseItem(course) {
 }
 
 /**
- * Build the brand link with the mark and wordmark.
+ * build the brand link with the mark and wordmark.
  * @returns {HTMLAnchorElement} link to the home route
  */
 function createBrand() {
@@ -167,7 +167,7 @@ function createBrand() {
 }
 
 /**
- * Build the New recording pill link.
+ * build the New recording pill link.
  * @returns {HTMLAnchorElement} link to the new recording route
  */
 function createNewButton() {
@@ -179,7 +179,7 @@ function createNewButton() {
 }
 
 /**
- * Build the storage block that shows used space and the recording count.
+ * build the storage block that shows used space and the recording count.
  * @param {number} recordingCount total recordings across all courses
  * @returns {HTMLDivElement} block that starts in the count only state
  */
@@ -208,7 +208,7 @@ function createStorageBlock(recordingCount) {
 }
 
 /**
- * Show real storage usage in the storage block, or fall back to the count only line.
+ * show real storage usage in the storage block, or fall back to the count only line.
  * @param {HTMLElement} meterElement the `.sidebar-storage` block from renderSidebar
  * @param {number} recordingCount total recordings across all courses
  * @param {{ estimate?: () => Promise<{ usage?: number, quota?: number }> }} [storage]
@@ -260,7 +260,7 @@ export async function updateStorageMeter(
 }
 
 /**
- * Mark exactly one sidebar link as the current page, or none.
+ * mark exactly one sidebar link as the current page, or none.
  * @param {HTMLElement} sidebarElement element returned by renderSidebar
  * @param {{ name: string, params?: Record<string, string> }} route the active route
  * @returns {void}
@@ -294,7 +294,7 @@ export function setSidebarActive(sidebarElement, route) {
 }
 
 /**
- * Build the sidebar for the app shell.
+ * build the sidebar for the app shell.
  * @param {{ courses: Array<{ id: string, code: string, color: string, recordingCount: number }>,
  *   activeRoute: { name: string, params?: Record<string, string> } }} options
  *   course list and the current route

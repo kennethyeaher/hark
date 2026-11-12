@@ -10,7 +10,7 @@ const recordings = buildSampleRecordings(now)
 const context = { courses: sampleCourses, recordings, now }
 
 /**
- * Get the trimmed text of every element that matches a selector.
+ * get the trimmed text of every element that matches a selector.
  * @param {ParentNode} root where to search
  * @param {string} selector css selector
  * @returns {string[]} text content of each match

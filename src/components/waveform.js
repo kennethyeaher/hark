@@ -8,7 +8,7 @@ const tallBarThreshold = 0.7
 const dimmedOpacity = 0.55
 
 /**
- * Hash a string to a 32 bit unsigned integer with FNV 1a.
+ * hash a string to a 32 bit unsigned integer with FNV 1a.
  * @param {string} text text to hash
  * @returns {number} the hash
  */
@@ -22,7 +22,7 @@ function hashString(text) {
 }
 
 /**
- * Build a seeded random number generator with mulberry32.
+ * build a seeded random number generator with mulberry32.
  * @param {number} seed 32 bit integer seed
  * @returns {() => number} function returning numbers from 0 up to 1
  */
@@ -38,7 +38,7 @@ function createGenerator(seed) {
 }
 
 /**
- * Compute repeatable bar heights for a seed.
+ * compute repeatable bar heights for a seed.
  * @param {string} seed text such as a recording id
  * @param {number} barCount number of bars, 1 to 200
  * @returns {number[]} heights from 0.3 up to 1
@@ -60,7 +60,7 @@ export function buildBarHeights(seed, barCount) {
 }
 
 /**
- * Render a decorative waveform svg for a recording.
+ * render a decorative waveform svg for a recording.
  * @param {{ seed: string, color: string, barCount?: number, height?: number }} options
  *   seed picks the bar pattern, color is a course color name
  * @returns {SVGSVGElement} an aria hidden svg at its natural width

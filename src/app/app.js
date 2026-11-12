@@ -27,7 +27,7 @@ const placeholderTitles = {
 }
 
 /**
- * Build the page element for a route.
+ * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
  * @param {{ courses: object[], recordings: object[] }} data app data passed to built pages
  * @returns {HTMLElement} the page to show in the content area
@@ -43,7 +43,7 @@ function renderPage(route, data) {
 }
 
 /**
- * Build the layout that stays on screen across routes.
+ * build the layout that stays on screen across routes.
  * @returns {{ shell: HTMLElement, sidebarSlot: HTMLElement, topbarSlot: HTMLElement, content: HTMLElement }}
  *   the shell and the three regions inside it
  */
@@ -72,7 +72,7 @@ function buildLayout() {
 }
 
 /**
- * Point the document title at the page and move focus to its heading so
+ * point the document title at the page and move focus to its heading so
  * keyboard and screen reader users land on the new page.
  * @param {HTMLElement} page the page that was just shown
  * @param {boolean} shouldMoveFocus false on first load, so focus starts at the top of the document
@@ -89,7 +89,7 @@ function announcePage(page, shouldMoveFocus) {
 }
 
 /**
- * Render the app shell into the root element once, then swap only the page
+ * render the app shell into the root element once, then swap only the page
  * content when the route changes.
  * @param {HTMLElement} root element that receives the app
  * @param {{ courses?: object[], recordings?: object[] }} [data] courses and recordings to show
@@ -113,7 +113,7 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
   const data = { courses, recordings }
 
   /**
-   * Render the page for a route into the content region.
+   * render the page for a route into the content region.
    * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
    * @returns {HTMLElement} the page that was rendered
    */
@@ -136,7 +136,7 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
   const stopListening = startRouter(showRoute)
 
   /**
-   * Stop following hash and view changes, and release the top bar's view subscription.
+   * stop following hash and view changes, and release the top bar's view subscription.
    * @returns {void}
    */
   function stopRouter() {

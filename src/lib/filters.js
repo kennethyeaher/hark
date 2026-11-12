@@ -19,7 +19,7 @@ const filterIds = recordingFilters.map((filter) => filter.id)
 const sortIds = recordingSorts.map((sort) => sort.id)
 
 /**
- * Get local midnight at the start of the given day.
+ * get local midnight at the start of the given day.
  * @param {Date} date any moment in the day
  * @returns {Date} a new date at 00:00 local time
  */
@@ -28,7 +28,7 @@ function startOfDay(date) {
 }
 
 /**
- * Check that a value is an array of recordings with a valid date.
+ * check that a value is an array of recordings with a valid date.
  * @param {unknown} recordings value to check
  * @returns {void}
  * @throws {TypeError} when it is not an array or a recording has no valid recordedAt date
@@ -46,7 +46,7 @@ function assertRecordings(recordings) {
 }
 
 /**
- * Keep the recordings that match one filter chip. "This week" means the last
+ * keep the recordings that match one filter chip. "This week" means the last
  * seven calendar days, today included.
  * @param {object[]} recordings recordings with recordedAt, status, isStarred, and hasNotes
  * @param {string} filterId one of the ids in recordingFilters
@@ -81,7 +81,7 @@ export function filterRecordings(recordings, filterId, now = new Date()) {
 }
 
 /**
- * Sort recordings by date without changing the input array.
+ * sort recordings by date without changing the input array.
  * @param {object[]} recordings recordings with a recordedAt date
  * @param {string} sortId `newest` or `oldest`
  * @returns {object[]} a new sorted array

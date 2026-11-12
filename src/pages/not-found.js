@@ -1,7 +1,7 @@
 import { createElement } from '../lib/dom.js'
 
 /**
- * Render the page for a route or id that does not exist.
+ * render the page for a route or id that does not exist.
  * @param {{ path?: string }} [params] the path that did not match, shown to the user
  * @returns {HTMLElement} the page section
  */

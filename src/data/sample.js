@@ -66,7 +66,7 @@ const notedIds = new Set([
 ])
 
 /**
- * Get a time on a day before now, at a fixed hour, never later than now.
+ * get a time on a day before now, at a fixed hour, never later than now.
  * @param {Date} now the current time
  * @param {number} daysBefore whole days before today
  * @param {number} hour local hour on that day
@@ -78,7 +78,7 @@ function dateBefore(now, daysBefore, hour) {
 }
 
 /**
- * Build the sample recordings with dates relative to now.
+ * build the sample recordings with dates relative to now.
  * @param {Date} [now] the current time, passed in so tests are stable
  * @returns {object[]} recordings, newest first
  * @throws {TypeError} when now is not a valid date

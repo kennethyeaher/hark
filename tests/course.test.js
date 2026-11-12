@@ -10,7 +10,7 @@ const context = { courses: sampleCourses, recordings: buildSampleRecordings(now)
 beforeEach(() => clearCourseChoices())
 
 /**
- * Render the HCIM 605 page in a view.
+ * render the HCIM 605 page in a view.
  * @param {'grid' | 'list'} view grid or list
  * @returns {HTMLElement} the page
  */
@@ -19,7 +19,7 @@ function renderHcim(view = 'grid') {
 }
 
 /**
- * Get the titles of the cards on a page, in order.
+ * get the titles of the cards on a page, in order.
  * @param {HTMLElement} page the course page
  * @returns {string[]} card titles
  */
@@ -28,7 +28,7 @@ function cardTitles(page) {
 }
 
 /**
- * Click the chip with the given label.
+ * click the chip with the given label.
  * @param {HTMLElement} page the course page
  * @param {string} label chip text
  * @returns {HTMLButtonElement} the chip

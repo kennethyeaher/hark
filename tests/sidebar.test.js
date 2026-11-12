@@ -30,7 +30,7 @@ const noStorage = {}
 const gigabyte = 1024 ** 3
 
 /**
- * Build a sidebar for a route name and optional params.
+ * build a sidebar for a route name and optional params.
  * @param {string} name route name
  * @param {Record<string, string>} [params] route params
  * @returns {HTMLElement} the rendered sidebar
@@ -40,7 +40,7 @@ function build(name, params = {}) {
 }
 
 /**
- * List the hrefs or labels of every element that has aria-current.
+ * list the hrefs or labels of every element that has aria-current.
  * @param {HTMLElement} sidebar rendered sidebar
  * @returns {string[]} hrefs of current links
  */

@@ -68,7 +68,7 @@ describe('tokens.css', () => {
   const lightBlock = css.slice(css.indexOf(':root {'), css.indexOf(':root[data-theme'))
 
   /**
-   * Read one custom property value from the light theme block.
+   * read one custom property value from the light theme block.
    * @param {string} name property name without the leading dashes
    * @returns {string | undefined} the value, or undefined when it is missing
    */

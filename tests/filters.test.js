@@ -5,7 +5,7 @@ import { filterRecordings, sortRecordings, recordingFilters } from '../src/lib/f
 const now = new Date(2026, 9, 28, 15)
 
 /**
- * Build a recording with defaults for the fields a test does not care about.
+ * build a recording with defaults for the fields a test does not care about.
  * @param {object} fields fields to override
  * @returns {object} the recording
  */
@@ -28,7 +28,7 @@ const recordings = [
 ]
 
 /**
- * List the ids of a set of recordings.
+ * list the ids of a set of recordings.
  * @param {object[]} list recordings
  * @returns {string[]} their ids in order
  */

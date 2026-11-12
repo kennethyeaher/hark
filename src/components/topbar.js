@@ -15,7 +15,7 @@ const viewOptions = [
 ]
 
 /**
- * Send the browser to a hash route.
+ * send the browser to a hash route.
  * @param {string} hash target such as `#/search?q=bias`
  * @returns {void}
  */
@@ -24,8 +24,8 @@ function navigateToHash(hash) {
 }
 
 /**
- * Build the top bar with the search form and the view toggle.
- * The bar lives for the whole app, but `destroyTopbar` removes its view subscription.
+ * build the top bar with the search form and the view toggle.
+ * the bar lives for the whole app, but `destroyTopbar` removes its view subscription.
  * @param {{ navigate?: (hash: string) => void, initialQuery?: string, viewStore?: { getView: () => string, setView: (view: string) => void, subscribeToView: (listener: (view: string) => void) => () => void } }} [options]
  *   `navigate` receives the target hash, `initialQuery` fills the field, `viewStore` defaults to the shared store
  * @returns {HTMLElement} the top bar element
@@ -84,7 +84,7 @@ export function renderTopbar({
   }
 
   /**
-   * Mark the button for the current view as pressed.
+   * mark the button for the current view as pressed.
    * @param {string} currentView `grid` or `list`
    * @returns {void}
    */
@@ -103,7 +103,7 @@ export function renderTopbar({
 }
 
 /**
- * Set the search field text, for example when the route is a search page.
+ * set the search field text, for example when the route is a search page.
  * @param {HTMLElement} topbarElement an element returned by `renderTopbar`
  * @param {string} query the text to show
  * @returns {void}
@@ -117,7 +117,7 @@ export function setSearchQuery(topbarElement, query) {
 }
 
 /**
- * Remove the view subscription of a top bar.
+ * remove the view subscription of a top bar.
  * @param {HTMLElement} topbarElement an element returned by `renderTopbar`
  * @returns {void}
  */

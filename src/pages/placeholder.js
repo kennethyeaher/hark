@@ -1,7 +1,7 @@
 import { createElement } from '../lib/dom.js'
 
 /**
- * Render the shared page for screens that later milestones build.
+ * render the shared page for screens that later milestones build.
  * @param {{ title: string }} params page title shown as the heading
  * @returns {HTMLElement} the page section
  * @throws {Error} when the title is missing
