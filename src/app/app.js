@@ -4,11 +4,16 @@ import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
 import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
 import { renderTopbar, setSearchQuery } from '../components/topbar.js'
-import { subscribeToView } from './view.js'
+import { getView, subscribeToView } from './view.js'
+import { renderHome } from '../pages/home.js'
+
+// pages built so far, keyed by route name
+const pageRenderers = {
+  home: renderHome,
+}
 
 // titles for routes whose pages arrive in later milestones
 const placeholderTitles = {
-  home: 'Home',
   course: 'Course',
   recording: 'Recording',
   recordings: 'Recordings',
@@ -23,9 +28,13 @@ const placeholderTitles = {
 /**
  * Build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
+ * @param {{ courses: object[], recordings: object[] }} data app data passed to built pages
  * @returns {HTMLElement} the page to show in the content area
  */
-function renderPage(route) {
+function renderPage(route, data) {
+  if (Object.hasOwn(pageRenderers, route.name)) {
+    return pageRenderers[route.name](route.params, { ...data, view: getView(), query: route.query })
+  }
   if (Object.hasOwn(placeholderTitles, route.name)) {
     return renderPlaceholder({ title: placeholderTitles[route.name] })
   }
@@ -68,12 +77,12 @@ function announcePage(page) {
  * Render the app shell into the root element once, then swap only the page
  * content when the route changes.
  * @param {HTMLElement} root element that receives the app
- * @param {{ courses?: object[] }} [data] courses shown in the sidebar
+ * @param {{ courses?: object[], recordings?: object[] }} [data] courses and recordings to show
  * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement, stopRouter: () => void }}
  *   the content region, a function that shows a parsed route, and one that stops listening
  * @throws {Error} when root is missing or is not an html element
  */
-export function mountApp(root, { courses = [] } = {}) {
+export function mountApp(root, { courses = [], recordings = [] } = {}) {
   if (!(root instanceof HTMLElement)) {
     throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
@@ -85,6 +94,7 @@ export function mountApp(root, { courses = [] } = {}) {
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
+  const data = { courses, recordings }
 
   /**
    * Render the page for a route into the content region.
@@ -93,7 +103,7 @@ export function mountApp(root, { courses = [] } = {}) {
    */
   function showRoute(route) {
     currentRoute = route
-    const page = renderPage(route)
+    const page = renderPage(route, data)
     layout.content.replaceChildren(page)
     setSidebarActive(sidebar, route)
     setSearchQuery(topbar, route.name === 'search' ? (route.query.q ?? '') : '')
@@ -103,7 +113,7 @@ export function mountApp(root, { courses = [] } = {}) {
 
   // a grid or list switch redraws the page in place, without moving focus off the toggle
   const stopViewUpdates = subscribeToView(() => {
-    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute))
+    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
   })
 
   const stopListening = startRouter(showRoute)

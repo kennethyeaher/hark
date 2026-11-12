@@ -1,0 +1,38 @@
+/* page layouts: home sections and the shared card and folder grids */
+
+/* section heading row with an optional link on the right */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-3);
+}
+
+.section-title {
+  font-size: var(--text-18);
+  font-weight: var(--weight-semibold);
+}
+
+.section-link {
+  font-size: var(--text-15);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.section-link:hover {
+  text-decoration: underline;
+}
+
+.home-section + .home-section {
+  margin-top: var(--space-7);
+}
+
+/* four columns at the mock width, fewer as the content narrows */
+.card-grid,
+.folder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-4);
+}
