@@ -10,6 +10,8 @@ import {
   saveRecording,
   trashRecording,
 } from '../../src/data/recordings.js'
+import { getNote, saveNote } from '../../src/data/notes.js'
+import { listMomentsForRecording, saveMoment } from '../../src/data/moments.js'
 
 /**
  * build a valid recording with fields that a test can override.
@@ -225,5 +227,30 @@ describe('trash, restore, and delete forever', () => {
     await deleteRecordingForever('week9')
     expect(await getRecording('week9')).toBeUndefined()
     expect(await listRecordings({ includeDeleted: true })).toEqual([])
+  })
+})
+
+describe('delete forever with notes and moments', () => {
+  it('removes the recording, its note, and its moments, and leaves other recordings alone', async () => {
+    await saveRecording(makeRecording({ id: 'week9' }))
+    await saveRecording(makeRecording({ id: 'week8' }))
+    await saveNote({ recordingId: 'week9', body: 'gone soon' })
+    await saveNote({ recordingId: 'week8', body: 'stays' })
+    await saveMoment({ id: 'a', recordingId: 'week9', atSeconds: 10, label: 'A', color: 'teal' })
+    await saveMoment({ id: 'b', recordingId: 'week9', atSeconds: 20, label: 'B', color: 'teal' })
+    await saveMoment({ id: 'c', recordingId: 'week8', atSeconds: 30, label: 'C', color: 'teal' })
+
+    await deleteRecordingForever('week9')
+
+    expect(await getRecording('week9')).toBeUndefined()
+    expect(await getNote('week9')).toBeUndefined()
+    expect(await listMomentsForRecording('week9')).toEqual([])
+    expect(await getRecording('week8')).toBeDefined()
+    expect((await getNote('week8')).body).toBe('stays')
+    expect((await listMomentsForRecording('week8')).map((stored) => stored.id)).toEqual(['c'])
+  })
+
+  it('does nothing when the recording does not exist', async () => {
+    await expect(deleteRecordingForever('missing')).resolves.toBeUndefined()
   })
 })

@@ -163,13 +163,21 @@ export function restoreRecording(id) {
 }
 
 /**
- * remove a recording from the store for good. nothing in the ui calls this yet.
+ * remove a recording, its note, and its moments for good, all in one transaction, so a
+ * failure part way leaves every one of them in place. nothing in the ui calls this yet.
  * @param {string} id recording id
- * @returns {Promise<void>} resolves once the recording is gone
+ * @returns {Promise<void>} resolves once the recording and everything that belongs to it is gone
  * @throws {TypeError} when id is not a non empty string
  */
 export async function deleteRecordingForever(id) {
   assertText(id, 'recording id')
   const database = await openDatabase()
-  await database.delete('recordings', id)
+  const transaction = database.transaction(['recordings', 'notes', 'moments'], 'readwrite')
+  const momentIds = await transaction.objectStore('moments').index('recordingId').getAllKeys(id)
+  await Promise.all([
+    transaction.objectStore('recordings').delete(id),
+    transaction.objectStore('notes').delete(id),
+    ...momentIds.map((momentId) => transaction.objectStore('moments').delete(momentId)),
+    transaction.done,
+  ])
 }

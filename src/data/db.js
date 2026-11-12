@@ -3,26 +3,36 @@
 import { openDB } from 'idb'
 
 export const databaseName = 'hark'
-export const databaseVersion = 1
+export const databaseVersion = 2
 
 // one shared connection, opened on first use
 let databasePromise = null
 
 /**
- * create or update the stores for a database that is moving up from oldVersion.
+ * create or update the stores for a database that is moving from oldVersion to newVersion.
  * each case adds what its version introduced and falls through to the next one, so a
  * database on any older version reaches the newest without rebuilding what it has.
  * @param {import('idb').IDBPDatabase} database the database being upgraded
  * @param {number} oldVersion version on disk, 0 for a new database
+ * @param {number} newVersion version being opened, so tests can stop at an older one
  * @returns {void}
  */
-export function upgradeDatabase(database, oldVersion) {
+export function upgradeDatabase(database, oldVersion, newVersion) {
   switch (oldVersion) {
     case 0: {
+      // version 1 holds courses and recordings
       database.createObjectStore('courses', { keyPath: 'id' })
       const recordings = database.createObjectStore('recordings', { keyPath: 'id' })
       recordings.createIndex('courseId', 'courseId')
       recordings.createIndex('recordedAt', 'recordedAt')
+    }
+    // falls through
+    case 1: {
+      // version 2 adds one note per recording and the moments marked inside a recording
+      if (newVersion < 2) break
+      database.createObjectStore('notes', { keyPath: 'recordingId' })
+      const moments = database.createObjectStore('moments', { keyPath: 'id' })
+      moments.createIndex('recordingId', 'recordingId')
     }
   }
 }
