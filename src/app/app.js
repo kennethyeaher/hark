@@ -6,15 +6,16 @@ import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
 import { renderTopbar, setSearchQuery } from '../components/topbar.js'
 import { getView, subscribeToView } from './view.js'
 import { renderHome } from '../pages/home.js'
+import { renderCourse } from '../pages/course.js'
 
 // pages built so far, keyed by route name
 const pageRenderers = {
   home: renderHome,
+  course: renderCourse,
 }
 
 // titles for routes whose pages arrive in later milestones
 const placeholderTitles = {
-  course: 'Course',
   recording: 'Recording',
   recordings: 'Recordings',
   notes: 'Notes',

@@ -1,6 +1,7 @@
 // home page: quick access, course folders, and the recent recordings table
 
 import { createElement } from '../lib/dom.js'
+import { sortRecordings } from '../lib/filters.js'
 import { renderRecordingCard } from '../components/recording-card.js'
 import { renderCourseFolder } from '../components/course-folder.js'
 import { renderRecordingTable } from '../components/recording-table.js'
@@ -42,7 +43,7 @@ export function renderHome(_params, { courses, recordings, view, now = new Date(
     throw new TypeError('renderHome needs courses and recordings arrays')
   }
   const courseById = new Map(courses.map((course) => [course.id, course]))
-  const newestFirst = [...recordings].sort((first, second) => second.recordedAt - first.recordedAt)
+  const newestFirst = sortRecordings(recordings, 'newest')
   const quickAccess = newestFirst.slice(0, quickAccessCount)
 
   // quick access shows cards in grid view and table rows in list view

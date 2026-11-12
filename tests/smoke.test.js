@@ -50,7 +50,16 @@ describe('mountApp', () => {
   it('marks the sidebar link for the current route', () => {
     const root = document.querySelector('#app')
     app = mountApp(root, {
-      courses: [{ id: 'hcim605', code: 'HCIM 605', color: 'indigo', recordingCount: 12 }],
+      courses: [
+        {
+          id: 'hcim605',
+          code: 'HCIM 605',
+          name: 'Qualitative Research Methods',
+          color: 'indigo',
+          recordingCount: 12,
+          totalSeconds: 34800,
+        },
+      ],
     })
     app.showRoute({ name: 'course', params: { id: 'hcim605' }, query: {} })
 
