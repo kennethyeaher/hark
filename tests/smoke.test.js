@@ -124,6 +124,58 @@ describe('mountApp', () => {
     expect(window.location.hash).toBe('#/trash')
   })
 
+  it('redraws the sidebar and page with new data without moving focus', () => {
+    const root = document.querySelector('#app')
+    const course = {
+      id: 'hcim605',
+      code: 'HCIM 605',
+      name: 'Qualitative Research Methods',
+      color: 'indigo',
+      recordingCount: 0,
+      totalSeconds: 0,
+    }
+    app = mountApp(root, { courses: [course], recordings: [] })
+    app.showRoute({ name: 'home', params: {}, query: {} })
+    root.querySelector('.app-sidebar a[href="#/course/hcim605"]').focus()
+
+    app.updateData({ courses: [{ ...course, recordingCount: 3 }], recordings: [] })
+
+    const link = root.querySelector('.app-sidebar a[href="#/course/hcim605"]')
+    expect(link.textContent).toContain('3')
+    expect(document.activeElement).toBe(link)
+    expect(root.querySelector('.course-folder').textContent).toContain('3 recordings')
+    expect(link.getAttribute('aria-current')).toBeNull()
+  })
+
+  it('moves focus to the content when the focused element is gone after a redraw', () => {
+    const root = document.querySelector('#app')
+    app = mountApp(root, { onLoadSamples: async () => {} })
+    app.showRoute({ name: 'home', params: {}, query: {} })
+    app.content.querySelector('button').focus()
+
+    app.updateData({
+      courses: [
+        {
+          id: 'hcim605',
+          code: 'HCIM 605',
+          name: 'Qualitative Research Methods',
+          color: 'indigo',
+          recordingCount: 0,
+          totalSeconds: 0,
+        },
+      ],
+      recordings: [],
+    })
+
+    expect(app.content.textContent).not.toContain('No lectures yet')
+    expect(document.activeElement).toBe(app.content)
+  })
+
+  it('rejects updateData without arrays', () => {
+    app = mountApp(document.querySelector('#app'))
+    expect(() => app.updateData({ courses: [] })).toThrow(/arrays/)
+  })
+
   it('throws a clear error when the root is missing', () => {
     expect(() => mountApp(null)).toThrow(/root element/)
   })

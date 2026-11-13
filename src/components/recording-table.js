@@ -16,7 +16,7 @@ const columns = [
 ]
 
 /**
- * Build the status cell content: a check and Summarized, or a progress bar.
+ * build the status cell content: a check and Summarized, or a progress bar.
  * @param {{ title: string, status: string, progress?: number }} recording recording data
  * @returns {HTMLElement} the status content
  * @throws {RangeError} when the status is unknown or progress is outside 0 to 1
@@ -58,7 +58,7 @@ export function renderRecordingStatus(recording) {
 }
 
 /**
- * Build one table row for a recording.
+ * build one table row for a recording.
  * @param {object} recording recording data
  * @param {object} course the course the recording belongs to
  * @param {Date} now the current time for relative dates
@@ -97,7 +97,7 @@ function renderRow(recording, course, now) {
 }
 
 /**
- * Render a table of recordings with Name, Course, Length, Date, and Status columns.
+ * render a table of recordings with Name, Course, Length, Date, and Status columns.
  * @param {{ recordings: object[], courses: object[], caption: string, now?: Date }} options
  *   recordings in display order, every course they reference, a caption that is
  *   read by screen readers but hidden on screen, and the current time

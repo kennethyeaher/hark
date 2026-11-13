@@ -18,7 +18,7 @@ const idRoutes = {
 }
 
 /**
- * Turn the query part of a hash into a plain object of strings.
+ * turn the query part of a hash into a plain object of strings.
  * @param {string} queryText text after the question mark, without it
  * @returns {Record<string, string>} each key with its decoded value
  */
@@ -31,7 +31,7 @@ function parseQuery(queryText) {
 }
 
 /**
- * Decode one path segment, returning null when the escape sequence is malformed.
+ * decode one path segment, returning null when the escape sequence is malformed.
  * @param {string} segment raw path segment
  * @returns {string | null} decoded text, or null when it cannot be decoded
  */
@@ -45,7 +45,7 @@ function decodeSegment(segment) {
 }
 
 /**
- * Parse a location hash into a route. Pure, so it is easy to test.
+ * parse a location hash into a route. Pure, so it is easy to test.
  * @param {string} hash value such as `#/course/hcim605` or `#/search?q=bias`
  * @returns {{ name: string, params: Record<string, string>, query: Record<string, string> }}
  *   the route name, path params, and query values. unknown paths return the
@@ -84,7 +84,7 @@ export function parseRoute(hash) {
 }
 
 /**
- * Call onChange with the current route now and again on every hash change.
+ * call onChange with the current route now and again on every hash change.
  * @param {(route: ReturnType<typeof parseRoute>) => void} onChange called with each parsed route
  * @returns {() => void} a function that stops listening
  * @throws {TypeError} when onChange is not a function
@@ -95,7 +95,7 @@ export function startRouter(onChange) {
   }
 
   /**
-   * Parse the current hash and hand the route to onChange.
+   * parse the current hash and hand the route to onChange.
    * @returns {void}
    */
   const handleHashChange = () => onChange(parseRoute(window.location.hash))

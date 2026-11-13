@@ -19,7 +19,7 @@ const monthNames = [
 ]
 
 /**
- * Format a length in seconds as whole minutes, such as `52 min` or `1 hr 08 min`.
+ * format a length in seconds as whole minutes, such as `52 min` or `1 hr 08 min`.
  * @param {number} seconds duration in seconds, zero or more
  * @returns {string} the formatted duration
  * @throws {TypeError} when seconds is not a number or is NaN
@@ -43,7 +43,7 @@ export function formatDuration(seconds) {
 }
 
 /**
- * Check that a value is a Date holding a real time.
+ * check that a value is a Date holding a real time.
  * @param {unknown} value value to check
  * @returns {boolean} true when value is a valid Date
  */
@@ -52,7 +52,7 @@ function isValidDate(value) {
 }
 
 /**
- * Count local calendar days for a date, ignoring the time of day.
+ * count local calendar days for a date, ignoring the time of day.
  * @param {Date} date a valid date
  * @returns {number} days since the epoch in local calendar terms
  */
@@ -61,7 +61,7 @@ function getLocalDayNumber(date) {
 }
 
 /**
- * Format a date as `Today`, `Yesterday`, `Oct 21`, or `Oct 21, 2025`.
+ * format a date as `Today`, `Yesterday`, `Oct 21`, or `Oct 21, 2025`.
  * @param {Date} date the date to describe
  * @param {Date} [now] the reference date, defaults to the current time
  * @returns {string} the relative label
@@ -83,7 +83,7 @@ export function formatRelativeDate(date, now = new Date()) {
 const countFormatter = new Intl.NumberFormat('en-US')
 
 /**
- * Format a count of recordings with a thousands separator and the right plural.
+ * format a count of recordings with a thousands separator and the right plural.
  * @param {number} count whole number of recordings, zero or more
  * @returns {string} text such as `1 recording` or `12,000 recordings`
  * @throws {RangeError} when count is not a whole number of zero or more
@@ -96,7 +96,7 @@ export function formatRecordingCount(count) {
 }
 
 /**
- * Check that a course has the fields every course view reads.
+ * check that a course has the fields every course view reads.
  * @param {unknown} course value to check
  * @param {string} caller name of the function asking, used in the error message
  * @returns {void}

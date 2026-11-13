@@ -5,7 +5,7 @@ import { renderWaveform } from './waveform.js'
 const moreIconPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01']
 
 /**
- * Check a recording and course pair before rendering.
+ * check a recording and course pair before rendering.
  * @param {object} recording recording data
  * @param {object} course course data
  * @returns {void}
@@ -31,7 +31,7 @@ function validateRecordingAndCourse(recording, course) {
 }
 
 /**
- * Render a recording card with waveform, title, meta line, and a placeholder More button.
+ * render a recording card with waveform, title, meta line, and a placeholder More button.
  * @param {{ recording: object, course: object, meta?: 'course' | 'date', now?: Date }} options
  *   meta picks the course code or the relative date for the meta line
  * @returns {HTMLElement} the article element
@@ -100,7 +100,7 @@ export function renderRecordingCard({ recording, course, meta = 'course', now = 
 }
 
 /**
- * Render the small square icon tile used in recording tables.
+ * render the small square icon tile used in recording tables.
  * @param {{ recording: object, course: object }} options recording and its course
  * @returns {HTMLElement} the decorative tile
  * @throws {TypeError} when recording or course is invalid

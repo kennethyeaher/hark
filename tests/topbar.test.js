@@ -4,7 +4,7 @@ import { renderTopbar, setSearchQuery, destroyTopbar } from '../src/components/t
 import { createViewStore } from '../src/app/view.js'
 
 /**
- * Build an in memory storage for tests.
+ * build an in memory storage for tests.
  * @param {Record<string, string>} [initial] starting values
  * @returns {{ getItem: Function, setItem: Function, data: Record<string, string> }} fake storage
  */
@@ -20,7 +20,7 @@ function createFakeStorage(initial = {}) {
 }
 
 /**
- * Render a top bar with a fresh store and a navigate spy.
+ * render a top bar with a fresh store and a navigate spy.
  * @returns {{ topbar: HTMLElement, navigate: import('vitest').Mock, store: ReturnType<typeof createViewStore> }} parts
  */
 function setup() {
@@ -31,7 +31,7 @@ function setup() {
 }
 
 /**
- * Type into the search field and submit the form.
+ * type into the search field and submit the form.
  * @param {HTMLElement} topbar the top bar
  * @param {string} value text to type
  * @returns {void}

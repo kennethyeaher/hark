@@ -3,7 +3,7 @@
 const svgNamespace = 'http://www.w3.org/2000/svg'
 
 /**
- * Create an html element with attributes and children in one call.
+ * create an html element with attributes and children in one call.
  * @param {string} tagName element name such as `div` or `a`
  * @param {Record<string, string | number | boolean | null | undefined>} [attributes]
  *   attributes to set. `className` sets the class, `text` sets text content,
@@ -24,7 +24,7 @@ export function createElement(tagName, attributes = {}, children = []) {
 }
 
 /**
- * Create a decorative 20px stroke icon from svg path data. Hidden from screen readers.
+ * create a decorative 20px stroke icon from svg path data. Hidden from screen readers.
  * @param {string[]} pathData one `d` string per path
  * @param {{ size?: number, className?: string }} [options] pixel size and class
  * @returns {SVGSVGElement} the svg element
@@ -51,7 +51,7 @@ export function createIcon(pathData, { size = 20, className = 'icon' } = {}) {
 }
 
 /**
- * Create an svg element in the svg namespace with attributes.
+ * create an svg element in the svg namespace with attributes.
  * @param {string} tagName svg element name such as `rect`
  * @param {Record<string, string | number>} [attributes] attributes to set
  * @returns {SVGElement} the new svg element
@@ -65,7 +65,7 @@ export function createSvgElement(tagName, attributes = {}) {
 }
 
 /**
- * Append nodes and strings to a parent, skipping empty values.
+ * append nodes and strings to a parent, skipping empty values.
  * @param {Element} parent element that receives the children
  * @param {Array<Node | string | null | undefined | false>} children nodes or text
  * @returns {void}

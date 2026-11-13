@@ -1,4 +1,5 @@
 import { createElement } from '../lib/dom.js'
+import { describeFocus, restoreFocus } from '../lib/focus.js'
 import { startRouter } from './router.js'
 import { renderPlaceholder } from '../pages/placeholder.js'
 import { renderNotFound } from '../pages/not-found.js'
@@ -27,9 +28,10 @@ const placeholderTitles = {
 }
 
 /**
- * Build the page element for a route.
+ * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
- * @param {{ courses: object[], recordings: object[] }} data app data passed to built pages
+ * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void> }} data
+ *   app data and actions passed to built pages
  * @returns {HTMLElement} the page to show in the content area
  */
 function renderPage(route, data) {
@@ -43,7 +45,7 @@ function renderPage(route, data) {
 }
 
 /**
- * Build the layout that stays on screen across routes.
+ * build the layout that stays on screen across routes.
  * @returns {{ shell: HTMLElement, sidebarSlot: HTMLElement, topbarSlot: HTMLElement, content: HTMLElement }}
  *   the shell and the three regions inside it
  */
@@ -72,7 +74,7 @@ function buildLayout() {
 }
 
 /**
- * Point the document title at the page and move focus to its heading so
+ * point the document title at the page and move focus to its heading so
  * keyboard and screen reader users land on the new page.
  * @param {HTMLElement} page the page that was just shown
  * @param {boolean} shouldMoveFocus false on first load, so focus starts at the top of the document
@@ -89,31 +91,34 @@ function announcePage(page, shouldMoveFocus) {
 }
 
 /**
- * Render the app shell into the root element once, then swap only the page
+ * render the app shell into the root element once, then swap only the page
  * content when the route changes.
  * @param {HTMLElement} root element that receives the app
- * @param {{ courses?: object[], recordings?: object[] }} [data] courses and recordings to show
- * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement, stopRouter: () => void }}
- *   the content region, a function that shows a parsed route, and one that stops listening
+ * @param {{ courses?: object[], recordings?: object[], onLoadSamples?: () => Promise<void> }} [data]
+ *   courses and recordings to show, and the action behind the empty state's sample button
+ * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement,
+ *   updateData: (next: { courses: object[], recordings: object[] }) => void, stopRouter: () => void }}
+ *   the content region, a function that shows a parsed route, one that redraws with new data,
+ *   and one that stops listening
  * @throws {Error} when root is missing or is not an html element
  */
-export function mountApp(root, { courses = [], recordings = [] } = {}) {
+export function mountApp(root, { courses = [], recordings = [], onLoadSamples } = {}) {
   if (!(root instanceof HTMLElement)) {
     throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
 
   const layout = buildLayout()
-  const sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
+  let sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
   layout.sidebarSlot.append(sidebar)
   const topbar = renderTopbar()
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
   let hasShownPage = false
-  const data = { courses, recordings }
+  const data = { courses, recordings, onLoadSamples }
 
   /**
-   * Render the page for a route into the content region.
+   * render the page for a route into the content region.
    * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
    * @returns {HTMLElement} the page that was rendered
    */
@@ -128,15 +133,46 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
     return page
   }
 
-  // a grid or list switch redraws the page in place, without moving focus off the toggle
-  const stopViewUpdates = subscribeToView(() => {
+  /**
+   * redraw the current page after a grid or list switch, without moving focus off the toggle.
+   * @returns {void}
+   */
+  function redrawForView() {
     if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
-  })
+  }
+  const stopViewUpdates = subscribeToView(redrawForView)
+
+  /**
+   * redraw the sidebar and the current page with new data, keeping focus where it was.
+   * @param {{ courses: object[], recordings: object[] }} next the reloaded library
+   * @returns {void}
+   * @throws {TypeError} when courses or recordings is not an array
+   */
+  function updateData(next) {
+    if (!Array.isArray(next?.courses) || !Array.isArray(next?.recordings)) {
+      throw new TypeError('updateData needs courses and recordings arrays')
+    }
+    data.courses = next.courses
+    data.recordings = next.recordings
+    // the top bar is not redrawn, so only focus in the sidebar or the page needs to be found again
+    const sidebarFocus = describeFocus(layout.sidebarSlot)
+    const contentFocus = describeFocus(layout.content)
+
+    const activeRoute = currentRoute ?? { name: 'home', params: {}, query: {} }
+    const nextSidebar = renderSidebar({ courses: data.courses, activeRoute })
+    sidebar.replaceWith(nextSidebar)
+    sidebar = nextSidebar
+    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
+
+    // the old focused element may be gone, so find its rebuilt copy or fall back to the content
+    restoreFocus(layout.sidebarSlot, sidebarFocus, layout.content)
+    restoreFocus(layout.content, contentFocus, layout.content)
+  }
 
   const stopListening = startRouter(showRoute)
 
   /**
-   * Stop following hash and view changes, and release the top bar's view subscription.
+   * stop following hash and view changes, and release the top bar's view subscription.
    * @returns {void}
    */
   function stopRouter() {
@@ -145,5 +181,5 @@ export function mountApp(root, { courses = [], recordings = [] } = {}) {
     destroyTopbar(topbar)
   }
 
-  return { content: layout.content, showRoute, stopRouter }
+  return { content: layout.content, showRoute, updateData, stopRouter }
 }

@@ -1,7 +1,7 @@
 // wcag 2.1 contrast math, used by tests and by any later check on token values
 
 /**
- * Turn a six digit hex color into red, green, and blue channels from 0 to 255.
+ * turn a six digit hex color into red, green, and blue channels from 0 to 255.
  * @param {string} hex color such as `#0B63E5` or `0b63e5`
  * @returns {{ red: number, green: number, blue: number }} the three channels
  * @throws {Error} when the value is not a six digit hex color
@@ -19,7 +19,7 @@ export function parseHexColor(hex) {
 }
 
 /**
- * Convert one 0 to 255 channel to its linear light value, as wcag defines it.
+ * convert one 0 to 255 channel to its linear light value, as wcag defines it.
  * @param {number} channel channel value from 0 to 255
  * @returns {number} linear value from 0 to 1
  */
@@ -29,7 +29,7 @@ function linearizeChannel(channel) {
 }
 
 /**
- * Compute the wcag relative luminance of a hex color.
+ * compute the wcag relative luminance of a hex color.
  * @param {string} hex six digit hex color
  * @returns {number} luminance from 0 for black to 1 for white
  * @throws {Error} when the value is not a six digit hex color
@@ -44,7 +44,7 @@ export function relativeLuminance(hex) {
 }
 
 /**
- * Compute the wcag contrast ratio between two hex colors. Order does not matter.
+ * compute the wcag contrast ratio between two hex colors. Order does not matter.
  * @param {string} foreground six digit hex color
  * @param {string} background six digit hex color
  * @returns {number} ratio from 1 to 21

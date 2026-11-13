@@ -22,7 +22,7 @@ const chevronDownPaths = ['M6 9l6 6 6-6']
 const choicesByCourseId = new Map()
 
 /**
- * Forget every remembered filter and sort, so each course opens on All and Newest again.
+ * forget every remembered filter and sort, so each course opens on All and Newest again.
  * @returns {void}
  */
 export function clearCourseChoices() {
@@ -30,7 +30,7 @@ export function clearCourseChoices() {
 }
 
 /**
- * Build the tinted course header with the folder tile, names, totals, and the New recording link.
+ * build the tinted course header with the folder tile, names, totals, and the New recording link.
  * @param {{ code: string, name: string, color: string, recordingCount: number, totalSeconds: number }} course course data
  * @returns {HTMLElement} the header element
  * @throws {TypeError} when the course is missing a field the header reads
@@ -68,7 +68,7 @@ function renderCourseHeader(course) {
 }
 
 /**
- * Render the course page for one course id.
+ * render the course page for one course id.
  * @param {{ id: string }} params route params with the course id
  * @param {{ courses: object[], recordings: object[], view: 'grid' | 'list', now?: Date }} context
  *   app data, the current view, and the current time
@@ -149,7 +149,7 @@ export function renderCourse({ id }, { courses, recordings, view, now = new Date
   const status = createElement('p', { className: 'visually-hidden', role: 'status' })
 
   /**
-   * Redraw the recordings for the current filter, sort, and view, and announce the count.
+   * redraw the recordings for the current filter, sort, and view, and announce the count.
    * @returns {void}
    */
   function updateResults() {

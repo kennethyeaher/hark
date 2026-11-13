@@ -5,7 +5,7 @@ const folderPaths = ['M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5
 const chevronPaths = ['M9 6l6 6-6 6']
 
 /**
- * Render a course folder link with a colored tile, code, and recording count.
+ * render a course folder link with a colored tile, code, and recording count.
  * @param {{ course: { id: string, code: string, color: string, recordingCount: number } }} options
  *   course data
  * @returns {HTMLAnchorElement} the link element

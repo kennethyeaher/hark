@@ -4,7 +4,7 @@ const storageKey = 'hark.view'
 const validViews = ['grid', 'list']
 
 /**
- * Check whether a value is a supported view name.
+ * check whether a value is a supported view name.
  * @param {unknown} value the value to check
  * @returns {boolean} true for `grid` or `list`
  */
@@ -13,7 +13,7 @@ function isValidView(value) {
 }
 
 /**
- * Create a view store that persists to the given storage.
+ * create a view store that persists to the given storage.
  * @param {{ getItem: (key: string) => string | null, setItem: (key: string, value: string) => void }} storage
  *   a localStorage shaped object. its methods may throw, which the store tolerates.
  * @returns {{ getView: () => string, setView: (view: string) => void, subscribeToView: (listener: (view: string) => void) => () => void }}
@@ -24,7 +24,7 @@ export function createViewStore(storage) {
   let currentView = null
 
   /**
-   * Read the saved view, falling back to grid when storage throws or holds a bad value.
+   * read the saved view, falling back to grid when storage throws or holds a bad value.
    * storage can throw in private mode or when blocked, so the catch is deliberate.
    * @returns {string} `grid` or `list`
    */
@@ -38,7 +38,7 @@ export function createViewStore(storage) {
   }
 
   /**
-   * Get the current view, loading the saved value on first use.
+   * get the current view, loading the saved value on first use.
    * @returns {string} `grid` or `list`
    */
   const getStoredView = () => {
@@ -50,7 +50,7 @@ export function createViewStore(storage) {
     getView: getStoredView,
 
     /**
-     * Set the view, save it, and notify listeners when it changed.
+     * set the view, save it, and notify listeners when it changed.
      * @param {string} view `grid` or `list`
      * @returns {void}
      * @throws {Error} when the view is not `grid` or `list`
@@ -72,7 +72,7 @@ export function createViewStore(storage) {
     },
 
     /**
-     * Listen for view changes.
+     * listen for view changes.
      * @param {(view: string) => void} listener called with the new view
      * @returns {() => void} a function that removes the listener
      * @throws {TypeError} when the listener is not a function
@@ -88,13 +88,13 @@ export function createViewStore(storage) {
 // reaches localStorage lazily because even reading the property can throw when blocked
 const browserStorage = {
   /**
-   * Read one value from localStorage.
+   * read one value from localStorage.
    * @param {string} key storage key
    * @returns {string | null} the stored value, or null when missing
    */
   getItem: (key) => window.localStorage.getItem(key),
   /**
-   * Write one value to localStorage.
+   * write one value to localStorage.
    * @param {string} key storage key
    * @param {string} value value to store
    * @returns {void}
@@ -106,7 +106,7 @@ const browserStorage = {
 const defaultStore = createViewStore(browserStorage)
 
 /**
- * Get the current view from the shared store.
+ * get the current view from the shared store.
  * @returns {string} `grid` or `list`
  */
 export function getView() {
@@ -114,7 +114,7 @@ export function getView() {
 }
 
 /**
- * Set the view on the shared store.
+ * set the view on the shared store.
  * @param {string} view `grid` or `list`
  * @returns {void}
  * @throws {Error} when the view is not `grid` or `list`
@@ -124,7 +124,7 @@ export function setView(view) {
 }
 
 /**
- * Listen for view changes on the shared store.
+ * listen for view changes on the shared store.
  * @param {(view: string) => void} listener called with the new view
  * @returns {() => void} a function that removes the listener
  */
