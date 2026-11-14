@@ -23,12 +23,17 @@ const defaultJobs = { getJobState, subscribe, cancelRecording }
 // the redraw that follows each saved chunk
 const confirmingIds = new Set()
 
+// recordings this tab is removing. the delete reloads the library before the course page
+// shows, and the card should go blank for that moment instead of saying the page is not found
+const removedIds = new Set()
+
 /**
- * forget every open cancel question, so each card starts with a plain Cancel button.
+ * forget every open cancel question and every removal, so each card starts fresh.
  * @returns {void}
  */
 export function clearCancelQuestions() {
   confirmingIds.clear()
+  removedIds.clear()
 }
 
 /**
@@ -181,6 +186,9 @@ export function renderTranscribing(
   }
   const recording = recordings.find((candidate) => candidate.id === id)
   const course = courses.find((candidate) => candidate.id === recording?.courseId)
+  if (!recording && removedIds.has(id)) {
+    return createElement('section', { className: 'page page-transcribe', 'aria-busy': 'true' })
+  }
   if (!recording || !course) return renderNotFound({ path: `/transcribe/${id}` })
   const model = getModel(recording.model)
 
@@ -201,9 +209,11 @@ export function renderTranscribing(
    */
   async function removeRecording(button, message) {
     button.disabled = true
+    removedIds.add(id)
     try {
       await jobs.cancelRecording(id)
     } catch (error) {
+      removedIds.delete(id)
       button.disabled = false
       announce(`The recording could not be removed: ${error.message}`)
       return

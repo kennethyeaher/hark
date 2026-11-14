@@ -374,6 +374,21 @@ describe('cancel and remove', () => {
     await vi.waitFor(() => expect(jobs.cancelRecording).toHaveBeenCalledWith('lecture18'))
   })
 
+  it('shows a blank page, not Page not found, for a recording it just removed', async () => {
+    const { page, navigate } = renderCard({
+      recording: { ...baseRecording, status: 'failed', errorMessage: 'bad file' },
+    })
+    page.querySelector('.transcribe-remove').click()
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalled())
+    // the library reload redraws the route once more before the course page shows
+    const redrawn = renderTranscribing(
+      { id: 'lecture18' },
+      { courses: [course], recordings: [], jobs: createFakeJobs(null).jobs }
+    )
+    expect(redrawn.querySelector('h1')).toBeNull()
+    expect(redrawn.textContent).toBe('')
+  })
+
   it('removes a failed recording and goes to its course', async () => {
     const { page, jobs, navigate } = renderCard({
       recording: { ...baseRecording, status: 'failed', errorMessage: 'bad file' },
