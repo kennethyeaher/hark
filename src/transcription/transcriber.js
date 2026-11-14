@@ -102,20 +102,20 @@ export function createTranscriber({ loadPipeline, post }) {
 
     // every chunk message carries the whole transcript so far, numbered from 0
     let transcript = []
-    for (const window of windows) {
+    for (const audioWindow of windows) {
       const audio = samples.subarray(
-        Math.round(window.startSeconds * whisperSampleRate),
-        Math.round(window.endSeconds * whisperSampleRate)
+        Math.round(audioWindow.startSeconds * whisperSampleRate),
+        Math.round(audioWindow.endSeconds * whisperSampleRate)
       )
       const output = await pipeline(audio, transcribeOptions)
       // loops inside a segment collapse first, so a looped segment can still match its neighbor
       const windowSegments = buildSegments(output.chunks ?? [], {
-        offsetSeconds: window.startSeconds,
+        offsetSeconds: audioWindow.startSeconds,
         durationSeconds: audio.length / whisperSampleRate,
       }).map((segment) => ({ ...segment, text: collapseRepeatedPhrases(segment.text) }))
       // repeats are dropped across the whole transcript, so one that spans a window edge goes too
       transcript = dropRepeatedSegments([...transcript, ...windowSegments])
-      post({ type: 'chunk', jobId, processedSeconds: window.endSeconds, segments: transcript })
+      post({ type: 'chunk', jobId, processedSeconds: audioWindow.endSeconds, segments: transcript })
     }
     post({ type: 'done', jobId, segments: transcript })
   }
