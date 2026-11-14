@@ -77,7 +77,6 @@ export function buildSampleLibrary(now = new Date()) {
   }
   const courses = sampleCourses.map((course) => normalizeCourse(course))
   const recordings = recordingRows.map(([id, title, courseId, minutes, daysBefore], index) => {
-    const isTranscribing = id === 'lecture17-client-side-ml'
     // later rows on the same day get an earlier hour so the order matches the mock
     const recordedAt = dateBefore(now, daysBefore, Math.max(0, 11 - index))
     return normalizeRecording({
@@ -87,8 +86,9 @@ export function buildSampleLibrary(now = new Date()) {
       durationSeconds: minutes * 60,
       recordedAt,
       createdAt: recordedAt,
-      status: isTranscribing ? 'transcribing' : 'summarized',
-      progress: isTranscribing ? 0.64 : 1,
+      // samples have no audio, so none may be left mid job: resume would mark it failed
+      status: id === 'lecture17-client-side-ml' ? 'transcribed' : 'summarized',
+      progress: 1,
       isStarred: starredIds.has(id),
     })
   })

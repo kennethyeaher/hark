@@ -44,6 +44,14 @@ describe('buildSampleLibrary', () => {
     expect(library.courses[0].id).toBe('hcim605')
   })
 
+  it('leaves no sample mid job, since samples have no audio to resume from', () => {
+    const { recordings } = buildSampleLibrary(now)
+    const lecture17 = recordings.find((recording) => recording.id === 'lecture17-client-side-ml')
+    expect(lecture17).toMatchObject({ status: 'transcribed', progress: 1 })
+    const statuses = new Set(recordings.map((recording) => recording.status))
+    expect([...statuses].sort()).toEqual(['summarized', 'transcribed'])
+  })
+
   it('rejects an invalid date', () => {
     expect(() => buildSampleLibrary(new Date('nope'))).toThrow(/valid date/)
   })

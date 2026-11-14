@@ -67,13 +67,13 @@ describe('renderHome in grid view', () => {
     expect(textsOf(table, 'tbody tr:nth-child(4) td')[2]).toBe('Oct 21')
   })
 
-  it('shows the transcribing recording as a progress bar at 64 percent', () => {
-    const bar = page.querySelector('[role="progressbar"]')
-    expect(bar.getAttribute('aria-valuenow')).toBe('64')
-    expect(bar.getAttribute('aria-valuemin')).toBe('0')
-    expect(bar.getAttribute('aria-valuemax')).toBe('100')
-    expect(bar.getAttribute('aria-label')).toBe('Transcribing Lecture 17 · Client-side ML')
-    expect(bar.parentElement.textContent).toBe('64%')
+  it('shows the transcribed sample as a status with no progress bar', () => {
+    const table = page.querySelector('.home-section:last-child table')
+    expect(table.querySelector('[role="progressbar"]')).toBeNull()
+    const row = [...table.querySelectorAll('tbody tr')].find((tableRow) =>
+      tableRow.textContent.includes('Lecture 17 · Client-side ML')
+    )
+    expect(row.lastElementChild.textContent).toBe('Transcribed')
   })
 })
 
