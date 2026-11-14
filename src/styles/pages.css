@@ -288,6 +288,8 @@
 
 .transcribe-title {
   margin-top: var(--space-1);
+  /* titles come from file names, which can have no spaces at all */
+  overflow-wrap: anywhere;
   font-size: var(--text-22);
   font-weight: var(--weight-semibold);
   text-align: center;
