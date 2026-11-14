@@ -7,9 +7,9 @@ import {
 
 describe('estimateSeconds', () => {
   it('multiplies audio length by the model factor', () => {
-    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'fast' })).toBeCloseTo(90)
-    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'balanced' })).toBeCloseTo(180)
-    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'accurate' })).toBeCloseTo(540)
+    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'fast' })).toBeCloseTo(54)
+    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'balanced' })).toBeCloseTo(90)
+    expect(estimateSeconds({ durationSeconds: 600, modelKey: 'accurate' })).toBeCloseTo(366)
   })
 
   it('gives 0 for a file with no length', () => {
@@ -18,7 +18,7 @@ describe('estimateSeconds', () => {
 
   it('handles a very long file', () => {
     // a ten hour recording on the accurate model
-    expect(estimateSeconds({ durationSeconds: 36000, modelKey: 'accurate' })).toBeCloseTo(32400)
+    expect(estimateSeconds({ durationSeconds: 36000, modelKey: 'accurate' })).toBeCloseTo(21960)
   })
 
   it.each([
@@ -37,7 +37,7 @@ describe('estimateRemainingSeconds', () => {
 
   it('falls back to the fixed rule before any audio is processed', () => {
     const remaining = estimateRemainingSeconds({ ...base, processedSeconds: 0, elapsedSeconds: 40 })
-    expect(remaining).toBeCloseTo(900)
+    expect(remaining).toBeCloseTo(450)
   })
 
   it('uses the measured speed once audio is processed', () => {

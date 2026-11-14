@@ -3,8 +3,9 @@
 /**
  * each choice names its hugging face model, the label shown in the ui, the model name shown
  * under it, the size of its q8 download in megabytes, and how many seconds of work one second
- * of audio takes. the speed factors are first guesses for the browser, tuned once real files
- * run there.
+ * of audio takes. the speed factors were measured in headless chrome on a mac from the moment
+ * the model is ready, rounded up so the estimate leans long: balanced on a 52 minute librivox
+ * recording, fast and accurate on a 50 second file.
  */
 export const transcriptionModels = Object.freeze({
   fast: Object.freeze({
@@ -13,7 +14,7 @@ export const transcriptionModels = Object.freeze({
     name: 'Whisper tiny',
     label: 'Fast',
     modelId: 'onnx-community/whisper-tiny',
-    secondsPerAudioSecond: 0.15,
+    secondsPerAudioSecond: 0.09,
   }),
   balanced: Object.freeze({
     key: 'balanced',
@@ -21,7 +22,7 @@ export const transcriptionModels = Object.freeze({
     name: 'Whisper base',
     label: 'Balanced',
     modelId: 'onnx-community/whisper-base',
-    secondsPerAudioSecond: 0.3,
+    secondsPerAudioSecond: 0.15,
   }),
   accurate: Object.freeze({
     key: 'accurate',
@@ -29,7 +30,7 @@ export const transcriptionModels = Object.freeze({
     name: 'Whisper small',
     label: 'Accurate',
     modelId: 'onnx-community/whisper-small',
-    secondsPerAudioSecond: 0.9,
+    secondsPerAudioSecond: 0.61,
   }),
 })
 

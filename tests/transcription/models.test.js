@@ -23,7 +23,7 @@ describe('transcription models', () => {
     const factors = ['fast', 'balanced', 'accurate'].map(
       (key) => getModel(key).secondsPerAudioSecond
     )
-    expect(factors).toEqual([0.15, 0.3, 0.9])
+    expect(factors).toEqual([0.09, 0.15, 0.61])
   })
 
   it('matches the model keys a recording can store, with balanced as the default', () => {
