@@ -345,3 +345,82 @@ describe('new course fields', () => {
     expect(document.activeElement.value).toBe('new-course-id')
   })
 })
+
+describe('unsupported files', () => {
+  /**
+   * pick a file and wait for the sheet to settle, whether or not it reads the length.
+   * @param {HTMLDialogElement} sheet the sheet
+   * @param {File} file the file
+   * @returns {Promise<void>} resolves after the sheet updates
+   */
+  async function pickAny(sheet, file) {
+    const input = sheet.querySelector('input[type="file"]')
+    Object.defineProperty(input, 'files', { value: [file], configurable: true })
+    input.dispatchEvent(new Event('change'))
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  }
+
+  /**
+   * read the error under the drop zone.
+   * @param {HTMLDialogElement} sheet the sheet
+   * @returns {string} the error text
+   */
+  function fileErrorText(sheet) {
+    return sheet.querySelector('#new-recording-file-error').textContent
+  }
+
+  it('rejects a file that is not audio without reading it', async () => {
+    const sheet = renderSheet()
+    await pickAny(sheet, new File(['%PDF'], 'syllabus.pdf', { type: 'application/pdf' }))
+    expect(fileErrorText(sheet)).toBe(
+      'syllabus.pdf is not an audio file. Pick an MP3, WAV, M4A, WebM, or OGG file.'
+    )
+    expect(actions.readAudioDuration).not.toHaveBeenCalled()
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
+  })
+
+  it('takes a listed extension even when the browser gives no type', async () => {
+    const sheet = renderSheet()
+    await pickAny(sheet, new File([new Uint8Array(4)], 'lecture.m4a', { type: '' }))
+    expect(fileErrorText(sheet)).toBe('')
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
+  })
+
+  it('rejects a recording longer than 3 hours', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(3 * 3600 + 1200)
+    const sheet = renderSheet()
+    await pickAny(sheet, makeFile('marathon.m4a'))
+    expect(fileErrorText(sheet)).toBe(
+      'marathon.m4a is 3 hr 20 min long. Hark takes recordings up to 3 hours.'
+    )
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
+    expect(sheet.querySelector('.sheet-estimate').textContent).toBe(
+      'Pick a file to see how long it will take.'
+    )
+  })
+
+  it('accepts a recording of exactly 3 hours', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(3 * 3600)
+    const sheet = renderSheet()
+    await pickAny(sheet, makeFile('long.m4a'))
+    expect(fileErrorText(sheet)).toBe('')
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
+  })
+
+  it('clears the error when a good file replaces a bad one', async () => {
+    const sheet = renderSheet()
+    await pickAny(sheet, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+    await pickAny(sheet, makeFile())
+    expect(fileErrorText(sheet)).toBe('')
+    expect(sheet.querySelector('input[type="file"]').hasAttribute('aria-invalid')).toBe(false)
+  })
+
+  it('saves nothing when Start is pressed with a rejected file', async () => {
+    const sheet = renderSheet()
+    await pickAny(sheet, new File(['x'], 'notes.txt', { type: 'text/plain' }))
+    sheet.querySelector('.sheet-start').click()
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(actions.saveRecording).not.toHaveBeenCalled()
+    expect(actions.saveAudio).not.toHaveBeenCalled()
+  })
+})

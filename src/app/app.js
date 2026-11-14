@@ -34,8 +34,8 @@ const homeRoute = { name: 'home', params: {}, query: {} }
 /**
  * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
- * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void> }} data
- *   app data and actions passed to built pages
+ * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void>,
+ *   navigate: (hash: string) => void }} data app data and actions passed to built pages
  * @returns {HTMLElement} the page to show in the content area
  */
 function renderPage(route, data) {
@@ -133,7 +133,7 @@ export function mountApp(
   root.replaceChildren(layout.shell)
   let currentRoute = null
   let hasShownPage = false
-  const data = { courses, recordings, onLoadSamples }
+  const data = { courses, recordings, onLoadSamples, navigate }
   // the open New recording sheet, the route that opened it, and the hash of the page under it
   let sheet = null
   let backgroundHash = '#/'

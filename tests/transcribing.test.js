@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  clearCancelQuestions,
   describeModelStep,
   describeTimeLeft,
   describeWaiting,
@@ -53,6 +54,7 @@ function createFakeJobs(initialState) {
   const listeners = new Set()
   return {
     jobs: {
+      cancelRecording: vi.fn(async () => {}),
       getJobState: () => initialState,
       subscribe: (listener) => {
         listeners.add(listener)
@@ -73,6 +75,7 @@ function createFakeJobs(initialState) {
  */
 function renderCard({ recording = baseRecording, state = null, countSegments } = {}) {
   const fake = createFakeJobs(state)
+  const navigate = vi.fn()
   const page = renderTranscribing(
     { id: recording.id },
     {
@@ -80,14 +83,16 @@ function renderCard({ recording = baseRecording, state = null, countSegments } =
       recordings: [recording],
       jobs: fake.jobs,
       countSegments: countSegments ?? (async () => 7),
+      navigate,
     }
   )
   document.body.replaceChildren(page)
-  return { page, push: fake.push }
+  return { page, push: fake.push, jobs: fake.jobs, navigate }
 }
 
 beforeEach(() => {
   document.body.replaceChildren()
+  clearCancelQuestions()
 })
 
 describe('pickCardState', () => {
@@ -302,5 +307,86 @@ describe('renderTranscribing in other states', () => {
     expect(() => renderTranscribing({ id: 'x' }, { courses: null, recordings: [] })).toThrow(
       /arrays/
     )
+  })
+})
+
+describe('cancel and remove', () => {
+  it('asks once inline before cancelling, with focus on the safe answer', () => {
+    const { page, jobs } = renderCard({ state: makeState() })
+    page.querySelector('.transcribe-cancel').click()
+    const question = page.querySelector('.transcribe-confirm')
+    expect(question.getAttribute('role')).toBe('group')
+    expect(question.textContent).toContain('Stop and remove this recording?')
+    expect(document.activeElement.textContent).toBe('Keep going')
+    expect(page.querySelector('.transcribe-stop').textContent).toBe('Stop and remove')
+    expect(jobs.cancelRecording).not.toHaveBeenCalled()
+  })
+
+  it('goes back to the Cancel button on Keep going', () => {
+    const { page, jobs } = renderCard({ state: makeState() })
+    page.querySelector('.transcribe-cancel').click()
+    page.querySelector('.transcribe-keep').click()
+    expect(page.querySelector('.transcribe-confirm')).toBeNull()
+    expect(document.activeElement).toBe(page.querySelector('.transcribe-cancel'))
+    expect(jobs.cancelRecording).not.toHaveBeenCalled()
+  })
+
+  it('keeps the question open across a live update and a fresh render', () => {
+    const { page, push } = renderCard({ state: makeState() })
+    page.querySelector('.transcribe-cancel').click()
+    push(makeState({ fraction: 0.5 }))
+    expect(page.querySelector('.transcribe-confirm')).not.toBeNull()
+    const { page: redrawn } = renderCard({ state: makeState({ fraction: 0.5 }) })
+    expect(redrawn.querySelector('.transcribe-confirm')).not.toBeNull()
+  })
+
+  it('cancels a running job, goes to the course page, and announces it', async () => {
+    vi.useFakeTimers()
+    const { page, jobs, navigate } = renderCard({ state: makeState({ fraction: 0.4 }) })
+    page.querySelector('.transcribe-cancel').click()
+    page.querySelector('.transcribe-stop').click()
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('#/course/hcim605'))
+    expect(jobs.cancelRecording).toHaveBeenCalledWith('lecture18')
+    vi.advanceTimersByTime(200)
+    expect(document.querySelector('#app-announcer').textContent).toBe(
+      'Stopped and removed Lecture 18 · Qualitative coding.'
+    )
+    vi.useRealTimers()
+  })
+
+  it('cancels a waiting recording the same way', async () => {
+    const { page, jobs } = renderCard({
+      recording: { ...baseRecording, status: 'queued' },
+      state: makeState({ phase: 'waiting', recordingsAhead: 1 }),
+    })
+    page.querySelector('.transcribe-cancel').click()
+    page.querySelector('.transcribe-stop').click()
+    await vi.waitFor(() => expect(jobs.cancelRecording).toHaveBeenCalledWith('lecture18'))
+  })
+
+  it('removes a failed recording and goes to its course', async () => {
+    const { page, jobs, navigate } = renderCard({
+      recording: { ...baseRecording, status: 'failed', errorMessage: 'bad file' },
+    })
+    page.querySelector('.transcribe-remove').click()
+    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('#/course/hcim605'))
+    expect(jobs.cancelRecording).toHaveBeenCalledWith('lecture18')
+  })
+
+  it('brings the button back and reports why when the delete fails', async () => {
+    vi.useFakeTimers()
+    const { page, jobs, navigate } = renderCard({
+      recording: { ...baseRecording, status: 'failed', errorMessage: 'bad file' },
+    })
+    jobs.cancelRecording.mockRejectedValueOnce(new Error('storage is blocked'))
+    const button = page.querySelector('.transcribe-remove')
+    button.click()
+    await vi.waitFor(() => expect(button.disabled).toBe(false))
+    vi.advanceTimersByTime(200)
+    expect(document.querySelector('#app-announcer').textContent).toBe(
+      'The recording could not be removed: storage is blocked'
+    )
+    expect(navigate).not.toHaveBeenCalled()
+    vi.useRealTimers()
   })
 })

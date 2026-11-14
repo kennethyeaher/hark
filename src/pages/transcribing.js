@@ -6,9 +6,10 @@ import { describeFocus, restoreFocus } from '../lib/focus.js'
 import { renderWaveform, setWaveformProgress } from '../components/waveform.js'
 import { formatEstimate } from '../transcription/estimate.js'
 import { getModel } from '../transcription/models.js'
-import { getJobState, subscribe } from '../transcription/jobs.js'
+import { cancelRecording, getJobState, subscribe } from '../transcription/jobs.js'
 import { listSegmentsForRecording } from '../data/segments.js'
 import { renderNotFound } from './not-found.js'
+import { announce } from '../lib/announce.js'
 
 const checkIconPaths = ['M5 12.5l4.5 4.5L19 7.5']
 const alertIconPaths = ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0 -18z', 'M12 8v4.5', 'M12 16h.01']
@@ -16,7 +17,28 @@ const lockIconPaths = ['M6 11h12v10H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3']
 const waveformBarCount = 48
 
 // the real job and data functions; tests pass fakes through the context
-const defaultJobs = { getJobState, subscribe }
+const defaultJobs = { getJobState, subscribe, cancelRecording }
+
+// recordings whose Cancel is asking to confirm. kept outside the page so the question survives
+// the redraw that follows each saved chunk
+const confirmingIds = new Set()
+
+/**
+ * forget every open cancel question, so each card starts with a plain Cancel button.
+ * @returns {void}
+ */
+export function clearCancelQuestions() {
+  confirmingIds.clear()
+}
+
+/**
+ * send the browser to a hash route.
+ * @param {string} hash target such as `#/`
+ * @returns {void}
+ */
+function navigateToHash(hash) {
+  window.location.hash = hash
+}
 
 /**
  * count the saved segments of a recording.
@@ -139,14 +161,20 @@ function renderHeading(recording, course, eyebrow) {
  * it is on screen and stops listening once the app replaces it.
  * @param {{ id: string }} params route params with the recording id
  * @param {{ courses: object[], recordings: object[], jobs?: object,
- *   countSegments?: (id: string) => Promise<number> }} context app data, plus job and data
- *   functions that tests replace
+ *   countSegments?: (id: string) => Promise<number>, navigate?: (hash: string) => void }}
+ *   context app data, plus job, data, and navigation functions that tests replace
  * @returns {HTMLElement} the page, or the not found page when the id is unknown
  * @throws {TypeError} when courses or recordings is not an array
  */
 export function renderTranscribing(
   { id },
-  { courses, recordings, jobs = defaultJobs, countSegments = countSavedSegments }
+  {
+    courses,
+    recordings,
+    jobs = defaultJobs,
+    countSegments = countSavedSegments,
+    navigate = navigateToHash,
+  }
 ) {
   if (!Array.isArray(courses) || !Array.isArray(recordings)) {
     throw new TypeError('renderTranscribing needs courses and recordings arrays')
@@ -165,17 +193,83 @@ export function renderTranscribing(
   const page = createElement('section', { className: 'page page-transcribe' })
 
   /**
-   * build the two buttons under a waiting or running card.
-   * @returns {HTMLElement} the button row
+   * stop the job, delete the recording with its audio and segments, and go to its course. when
+   * the delete fails the button comes back and the reason is read out.
+   * @param {HTMLButtonElement} button the button that asked, disabled while this runs
+   * @param {string} message what to tell screen readers once the course page shows
+   * @returns {Promise<void>} resolves once the recording is gone, or the failure is reported
+   */
+  async function removeRecording(button, message) {
+    button.disabled = true
+    try {
+      await jobs.cancelRecording(id)
+    } catch (error) {
+      button.disabled = false
+      announce(`The recording could not be removed: ${error.message}`)
+      return
+    }
+    confirmingIds.delete(id)
+    navigate(`#/course/${encodeURIComponent(course.id)}`)
+    announce(message)
+  }
+
+  /**
+   * build the two buttons under a waiting or running card. Cancel asks once inline before it
+   * removes anything.
+   * @returns {HTMLElement} the button row, or the question with its two answers
    */
   function renderActions() {
+    if (confirmingIds.has(id)) {
+      const stopButton = createElement('button', {
+        type: 'button',
+        className: 'button button-outline button-danger transcribe-stop',
+        text: 'Stop and remove',
+      })
+      const keepButton = createElement('button', {
+        type: 'button',
+        className: 'button button-outline transcribe-keep',
+        text: 'Keep going',
+      })
+      stopButton.addEventListener('click', () =>
+        removeRecording(stopButton, `Stopped and removed ${recording.title}.`)
+      )
+      keepButton.addEventListener('click', () => {
+        confirmingIds.delete(id)
+        draw()
+        page.querySelector('.transcribe-cancel')?.focus()
+      })
+      return createElement(
+        'div',
+        {
+          className: 'transcribe-confirm',
+          role: 'group',
+          'aria-labelledby': 'transcribe-confirm-question',
+        },
+        [
+          createElement('p', {
+            id: 'transcribe-confirm-question',
+            className: 'transcribe-confirm-question',
+            text: 'Stop and remove this recording?',
+          }),
+          createElement('div', { className: 'transcribe-actions' }, [keepButton, stopButton]),
+        ]
+      )
+    }
+
+    const cancelButton = createElement('button', {
+      type: 'button',
+      className: 'button button-plain button-danger transcribe-cancel',
+      text: 'Cancel',
+    })
+    cancelButton.addEventListener('click', () => {
+      confirmingIds.add(id)
+      draw()
+      // the safe answer takes focus, so a second Enter does not remove the recording
+      page.querySelector('.transcribe-keep')?.focus()
+    })
     return createElement('div', { className: 'transcribe-actions' }, [
       createElement('a', { className: 'button button-outline', href: '#/', text: 'Keep working' }),
-      createElement('button', {
-        type: 'button',
-        className: 'button button-plain button-danger transcribe-cancel',
-        text: 'Cancel',
-      }),
+      cancelButton,
     ])
   }
 
@@ -373,6 +467,14 @@ export function renderTranscribing(
    */
   function renderFailed() {
     const message = jobState?.errorMessage ?? recording.errorMessage ?? 'Something went wrong.'
+    const removeButton = createElement('button', {
+      type: 'button',
+      className: 'button button-outline button-danger transcribe-remove',
+      text: 'Remove recording',
+    })
+    removeButton.addEventListener('click', () =>
+      removeRecording(removeButton, `Removed ${recording.title}.`)
+    )
     return [
       ...renderHeading(recording, course, {
         text: 'Failed',
@@ -382,13 +484,7 @@ export function renderTranscribing(
         createIcon(alertIconPaths, { size: 18 }),
         message,
       ]),
-      createElement('div', { className: 'transcribe-actions' }, [
-        createElement('button', {
-          type: 'button',
-          className: 'button button-outline button-danger transcribe-remove',
-          text: 'Remove recording',
-        }),
-      ]),
+      createElement('div', { className: 'transcribe-actions' }, [removeButton]),
     ]
   }
 

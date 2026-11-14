@@ -476,6 +476,20 @@
   margin-top: var(--space-6);
 }
 
+.transcribe-confirm {
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+.transcribe-confirm-question {
+  font-size: var(--text-15);
+  font-weight: var(--weight-medium);
+}
+
+.transcribe-confirm .transcribe-actions {
+  margin-top: var(--space-3);
+}
+
 .button-outline {
   color: var(--color-label);
   background: var(--color-background);

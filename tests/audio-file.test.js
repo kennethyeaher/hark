@@ -1,6 +1,44 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildRecordingTitle, readAudioDuration } from '../src/lib/audio-file.js'
+import {
+  buildRecordingTitle,
+  describeAudioLimit,
+  isAudioFile,
+  maxAudioSeconds,
+  readAudioDuration,
+} from '../src/lib/audio-file.js'
+
+describe('isAudioFile', () => {
+  it.each([
+    [{ name: 'lecture.mp3', type: 'audio/mpeg' }, true],
+    [{ name: 'lecture', type: 'audio/x-m4a' }, true],
+    [{ name: 'LECTURE.M4A', type: '' }, true],
+    [{ name: 'recording.webm', type: 'video/webm' }, true],
+    [{ name: 'notes.pdf', type: 'application/pdf' }, false],
+    [{ name: 'clip.mov', type: 'video/quicktime' }, false],
+    [{ name: 'mp3', type: '' }, false],
+  ])('treats %j as audio: %s', (file, expected) => {
+    expect(isAudioFile(file)).toBe(expected)
+  })
+
+  it('rejects something that is not a file', () => {
+    expect(() => isAudioFile(null)).toThrow(TypeError)
+  })
+})
+
+describe('describeAudioLimit', () => {
+  it('names the limit in hours or minutes', () => {
+    expect(describeAudioLimit()).toBe(`${maxAudioSeconds / 3600} hours`)
+    expect(describeAudioLimit(3600)).toBe('1 hour')
+    expect(describeAudioLimit(7200)).toBe('2 hours')
+    expect(describeAudioLimit(5400)).toBe('90 minutes')
+  })
+
+  it('rejects a limit that is not whole minutes', () => {
+    expect(() => describeAudioLimit(90.5)).toThrow(RangeError)
+    expect(() => describeAudioLimit(0)).toThrow(RangeError)
+  })
+})
 
 describe('buildRecordingTitle', () => {
   it.each([

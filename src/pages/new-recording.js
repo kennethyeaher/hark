@@ -2,7 +2,13 @@
 
 import { createElement, createIcon } from '../lib/dom.js'
 import { courseColors, formatDuration } from '../lib/format.js'
-import { buildRecordingTitle, readAudioDuration } from '../lib/audio-file.js'
+import {
+  buildRecordingTitle,
+  describeAudioLimit,
+  isAudioFile,
+  maxAudioSeconds,
+  readAudioDuration,
+} from '../lib/audio-file.js'
 import { formatBytes } from '../components/sidebar.js'
 import { nextCourseColor, saveCourse } from '../data/courses.js'
 import { deleteRecordingForever, saveRecording } from '../data/recordings.js'
@@ -182,7 +188,7 @@ export function renderNewRecordingSheet({
   // source cards. upload is the only source for now; record now waits for a later milestone
   const uploadCard = renderSourceCard({
     title: 'Upload audio',
-    subtitle: 'MP3, WAV, M4A, WebM · up to 3 hours',
+    subtitle: `MP3, WAV, M4A, WebM · up to ${describeAudioLimit()}`,
     iconPaths: uploadIconPaths,
     isSelected: true,
   })
@@ -436,7 +442,9 @@ export function renderNewRecordingSheet({
   }
 
   /**
-   * take a picked or dropped file, read its length, and show it.
+   * take a picked or dropped file, check it, read its length, and show it. a file that is not
+   * audio, has no readable length, or runs past the limit shows why under the drop zone, and
+   * nothing is saved.
    * @param {File | undefined} file the file, if one was picked
    * @returns {Promise<void>} resolves once the file is shown or rejected
    */
@@ -445,17 +453,25 @@ export function renderNewRecordingSheet({
     fileReadNumber += 1
     const readNumber = fileReadNumber
     Object.assign(state, { file, durationSeconds: null, fileError: null, isReadingFile: true })
-    update()
-    try {
-      const durationSeconds = await actions.readAudioDuration(file)
-      if (readNumber !== fileReadNumber) return
-      state.durationSeconds = durationSeconds
-    } catch {
-      // the reason only matters to the browser; the person needs to know the file will not work
-      if (readNumber !== fileReadNumber) return
-      state.fileError = `The length of ${file.name} could not be read. Try an MP3, WAV, M4A, or WebM file.`
+    if (!isAudioFile(file)) {
+      state.fileError = `${file.name} is not an audio file. Pick an MP3, WAV, M4A, WebM, or OGG file.`
+      state.isReadingFile = false
+      update()
+      return
     }
+    update()
+    // the browser's reason means little to a person, so a failed read turns into null and the
+    // message below says the file will not work
+    const durationSeconds = await actions.readAudioDuration(file).catch(() => null)
+    if (readNumber !== fileReadNumber) return
     state.isReadingFile = false
+    if (durationSeconds === null) {
+      state.fileError = `The length of ${file.name} could not be read. Try an MP3, WAV, M4A, or WebM file.`
+    } else if (durationSeconds > maxAudioSeconds) {
+      state.fileError = `${file.name} is ${formatDuration(durationSeconds)} long. Hark takes recordings up to ${describeAudioLimit()}.`
+    } else {
+      state.durationSeconds = durationSeconds
+    }
     update()
   }
 
