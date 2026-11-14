@@ -16,8 +16,8 @@
 import { getModel } from './models.js'
 import { whisperSampleRate } from './decode.js'
 import { createDownloadTracker } from './progress.js'
-import { buildSegments, collapseRepeatedPhrases } from './segments.js'
-import { dropRepeatedSegments, findQuietCuts, planWindows } from './windows.js'
+import { buildSegments, collapseRepeatedPhrases, dropRepeatedSegments } from './segments.js'
+import { findQuietCuts, planWindows } from './windows.js'
 
 /** nominal length of the audio one window owns, before its cut moves to a quiet moment */
 export const windowSeconds = 300
