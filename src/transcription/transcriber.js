@@ -2,19 +2,24 @@
   the transcription worker's logic, kept apart from the worker so tests can drive it with a
   fake pipeline.
 
-  long files are cut into 5 minute windows. each window runs through the whisper pipeline,
-  which does its own 30 second chunking inside, and a `chunk` message goes out after every
-  window. transformers.js 3.8 has a WhisperTextStreamer with chunk callbacks, but its times are
-  relative to each 30 second piece and the overlaps are only merged after the whole call ends,
-  so it cannot give final segments part way through. windows can.
+  long files are cut into windows of about 5 minutes. each cut sits at the quietest moment
+  within a few seconds of its nominal place, and the audio sent for a window carries 5 seconds
+  of context past each edge, so whisper never hears a word cut in half. only segments whose
+  midpoint falls inside a window's own range are kept (see windows.js). each window runs through
+  the whisper pipeline, which does its own 30 second chunking inside, and a `chunk` message with
+  the transcript so far goes out after every window. transformers.js 3.8 has a
+  WhisperTextStreamer with chunk callbacks, but its times are relative to each 30 second piece
+  and the overlaps are only merged after the whole call ends, so it cannot give final segments
+  part way through. windows can.
 */
 
 import { getModel } from './models.js'
 import { whisperSampleRate } from './decode.js'
 import { createDownloadTracker } from './progress.js'
-import { buildSegments, mergeSegments } from './segments.js'
+import { buildSegments } from './segments.js'
+import { findQuietCuts, keepOwnedSegments, planWindows } from './windows.js'
 
-/** length of one window of audio sent to the pipeline at a time */
+/** nominal length of the audio one window owns, before its cut moves to a quiet moment */
 export const windowSeconds = 300
 
 // whisper settings: 30 second chunks that overlap by 5 seconds on each side, with timestamps
@@ -78,7 +83,8 @@ export function createTranscriber({ loadPipeline, post }) {
   }
 
   /**
-   * transcribe audio window by window, posting a chunk after each window and done at the end.
+   * transcribe audio window by window, posting the transcript so far after each window and the
+   * whole transcript at the end.
    * @param {{ jobId: string | number, samples: Float32Array, modelKey: string }} message job
    * @returns {Promise<void>} resolves once done is posted
    * @throws {TypeError} when samples is not a Float32Array
@@ -90,31 +96,30 @@ export function createTranscriber({ loadPipeline, post }) {
     }
     const pipeline = await getPipeline(modelKey)
     post({ type: 'ready', jobId, modelKey })
-    const windowLength = windowSeconds * whisperSampleRate
+    const durationSeconds = samples.length / whisperSampleRate
+    const cuts = findQuietCuts(samples, { sampleRate: whisperSampleRate, windowSeconds })
+    const windows = planWindows(durationSeconds, cuts)
 
-    const windows = []
-    for (let start = 0; start < samples.length; start += windowLength) {
-      const windowSamples = samples.subarray(start, start + windowLength)
-      const output = await pipeline(windowSamples, transcribeOptions)
-      const offsetSeconds = start / whisperSampleRate
+    // every chunk message carries the whole transcript so far, numbered from 0
+    let transcript = []
+    for (const window of windows) {
+      const audio = samples.subarray(
+        Math.round(window.audioStart * whisperSampleRate),
+        Math.round(window.audioEnd * whisperSampleRate)
+      )
+      const output = await pipeline(audio, transcribeOptions)
       const windowSegments = buildSegments(output.chunks ?? [], {
-        offsetSeconds,
-        durationSeconds: windowSamples.length / whisperSampleRate,
+        offsetSeconds: window.audioStart,
+        durationSeconds: audio.length / whisperSampleRate,
       })
-      // number the new segments after every segment from earlier windows
-      const segmentsBefore = windows.flat().length
-      windows.push(windowSegments)
-      post({
-        type: 'chunk',
-        jobId,
-        processedSeconds: offsetSeconds + windowSamples.length / whisperSampleRate,
-        segments: windowSegments.map((segment, index) => ({
-          ...segment,
-          index: segmentsBefore + index,
-        })),
-      })
+      const ownedSegments = keepOwnedSegments(windowSegments, window)
+      transcript = [...transcript, ...ownedSegments].map((segment, index) => ({
+        ...segment,
+        index,
+      }))
+      post({ type: 'chunk', jobId, processedSeconds: window.ownedEnd, segments: transcript })
     }
-    post({ type: 'done', jobId, segments: mergeSegments(windows) })
+    post({ type: 'done', jobId, segments: transcript })
   }
 
   /**

@@ -78,18 +78,3 @@ function findMissingEnd(chunks, position, durationSeconds) {
   }
   return durationSeconds
 }
-
-/**
- * join the segments of several windows into one transcript and number them again from 0.
- * @param {Array<Array<{ startSeconds: number, endSeconds: number, text: string }>>} lists
- *   segments of each window, in window order
- * @returns {Array<{ index: number, startSeconds: number, endSeconds: number, text: string }>}
- *   new segment objects, numbered in order
- * @throws {TypeError} when lists is not an array of arrays
- */
-export function mergeSegments(lists) {
-  if (!Array.isArray(lists) || !lists.every(Array.isArray)) {
-    throw new TypeError('mergeSegments needs an array of segment arrays')
-  }
-  return lists.flat().map((segment, index) => ({ ...segment, index }))
-}

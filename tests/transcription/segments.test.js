@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSegments, mergeSegments } from '../../src/transcription/segments.js'
+import { buildSegments } from '../../src/transcription/segments.js'
 
 // shaped like the chunks the transformers.js whisper pipeline returns with return_timestamps
 const pipelineChunks = [
@@ -67,27 +67,5 @@ describe('buildSegments', () => {
     [[], { offsetSeconds: -5 }, /offsetSeconds must be a finite number/],
   ])('rejects %j with %j', (chunks, options, message) => {
     expect(() => buildSegments(chunks, options)).toThrow(message)
-  })
-})
-
-describe('mergeSegments', () => {
-  it('joins windows in order and numbers them again', () => {
-    const first = buildSegments(pipelineChunks.slice(0, 2))
-    const second = buildSegments(pipelineChunks.slice(0, 2), { offsetSeconds: 300 })
-    const merged = mergeSegments([first, [], second])
-    expect(merged.map((segment) => segment.index)).toEqual([0, 1, 2, 3])
-    expect(merged.map((segment) => segment.startSeconds)).toEqual([0, 4.52, 300, 304.52])
-  })
-
-  it('does not change the segments it was given', () => {
-    const first = buildSegments(pipelineChunks.slice(0, 1))
-    const second = buildSegments(pipelineChunks.slice(0, 1))
-    mergeSegments([first, second])
-    expect(second[0].index).toBe(0)
-  })
-
-  it('rejects input that is not a list of lists', () => {
-    expect(() => mergeSegments([[], 'x'])).toThrow(/array of segment arrays/)
-    expect(() => mergeSegments(null)).toThrow(/array of segment arrays/)
   })
 })
