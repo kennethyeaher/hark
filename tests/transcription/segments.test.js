@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildSegments } from '../../src/transcription/segments.js'
+import { buildSegments, collapseRepeatedPhrases } from '../../src/transcription/segments.js'
 
 // shaped like the chunks the transformers.js whisper pipeline returns with return_timestamps
 const pipelineChunks = [
@@ -67,5 +67,40 @@ describe('buildSegments', () => {
     [[], { offsetSeconds: -5 }, /offsetSeconds must be a finite number/],
   ])('rejects %j with %j', (chunks, options, message) => {
     expect(() => buildSegments(chunks, options)).toThrow(message)
+  })
+})
+
+describe('collapseRepeatedPhrases', () => {
+  it('collapses the whisper loop shape to one occurrence', () => {
+    const loop = Array.from({ length: 90 }, () => 'who is a person').join(' ')
+    expect(
+      collapseRepeatedPhrases(`In fact, if you are a person ${loop} I think there are cases.`)
+    ).toBe('In fact, if you are a person who is a person I think there are cases.')
+  })
+
+  it('keeps the casing and punctuation of the first occurrence', () => {
+    expect(
+      collapseRepeatedPhrases('The United States, the united states. THE UNITED STATES! Next.')
+    ).toBe('The United States, Next.')
+  })
+
+  it('keeps a phrase repeated exactly twice', () => {
+    const text = 'It is very, very good, and very, very cheap.'
+    expect(collapseRepeatedPhrases(text)).toBe(text)
+    expect(collapseRepeatedPhrases('Thank you. Thank you.')).toBe('Thank you. Thank you.')
+  })
+
+  it('keeps an ordinary list and single repeated words', () => {
+    expect(collapseRepeatedPhrases('one, two, three, four')).toBe('one, two, three, four')
+    expect(collapseRepeatedPhrases('No, no, no, no.')).toBe('No, no, no, no.')
+  })
+
+  it('leaves empty text and punctuation alone', () => {
+    expect(collapseRepeatedPhrases('')).toBe('')
+    expect(collapseRepeatedPhrases('- - - - - -')).toBe('- - - - - -')
+  })
+
+  it('rejects text that is not a string', () => {
+    expect(() => collapseRepeatedPhrases(null)).toThrow(/text must be a string/)
   })
 })

@@ -162,6 +162,24 @@ describe('createTranscriber', () => {
     ])
   })
 
+  it('collapses a phrase whisper loops on inside a segment', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    fakePipeline.mockResolvedValueOnce({
+      chunks: [
+        { timestamp: [0, 8], text: ' A person who is a person who is a person who is here.' },
+      ],
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 'job',
+      samples: silence(10),
+      modelKey: 'balanced',
+    })
+    expect(posted.at(-1).segments).toEqual([
+      { index: 0, startSeconds: 0, endSeconds: 8, text: 'A person who is here.' },
+    ])
+  })
+
   it('loads each model once and reuses it', async () => {
     const { transcriber, posted, loadPipeline } = setup()
     const job = { type: 'transcribe', samples: silence(1), modelKey: 'balanced' }

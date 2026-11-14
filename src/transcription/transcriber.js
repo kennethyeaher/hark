@@ -9,14 +9,14 @@
   transcript so far goes out after every window. transformers.js 3.8 has a WhisperTextStreamer
   with chunk callbacks, but its times are relative to each 30 second piece and the overlaps are
   only merged after the whole call ends, so it cannot give final segments part way through.
-  windows can. a segment that repeats the one before it word for word is dropped, since whisper
-  sometimes loops on one sentence.
+  windows can. whisper sometimes loops, so a short phrase repeated 3 or more times inside a
+  segment collapses to one, and a segment that repeats the one before it word for word is dropped.
 */
 
 import { getModel } from './models.js'
 import { whisperSampleRate } from './decode.js'
 import { createDownloadTracker } from './progress.js'
-import { buildSegments } from './segments.js'
+import { buildSegments, collapseRepeatedPhrases } from './segments.js'
 import { dropRepeatedSegments, findQuietCuts, planWindows } from './windows.js'
 
 /** nominal length of the audio one window owns, before its cut moves to a quiet moment */
@@ -108,10 +108,11 @@ export function createTranscriber({ loadPipeline, post }) {
         Math.round(window.endSeconds * whisperSampleRate)
       )
       const output = await pipeline(audio, transcribeOptions)
+      // loops inside a segment collapse first, so a looped segment can still match its neighbor
       const windowSegments = buildSegments(output.chunks ?? [], {
         offsetSeconds: window.startSeconds,
         durationSeconds: audio.length / whisperSampleRate,
-      })
+      }).map((segment) => ({ ...segment, text: collapseRepeatedPhrases(segment.text) }))
       // repeats are dropped across the whole transcript, so one that spans a window edge goes too
       transcript = dropRepeatedSegments([...transcript, ...windowSegments])
       post({ type: 'chunk', jobId, processedSeconds: window.endSeconds, segments: transcript })
