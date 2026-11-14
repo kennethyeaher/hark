@@ -157,7 +157,7 @@ describe('renderNewRecordingSheet', () => {
     const sheet = renderSheet()
     const [upload, record] = sheet.querySelectorAll('.source-card')
     expect(upload.getAttribute('aria-pressed')).toBe('true')
-    expect(upload.textContent).toContain('MP3, WAV, M4A, WebM · up to 3 hours')
+    expect(upload.textContent).toContain('MP3, WAV, M4A, WebM · up to 2 hours')
     expect(record.getAttribute('aria-disabled')).toBe('true')
     expect(record.getAttribute('aria-label')).toBe('Record now, coming soon')
     expect(record.hasAttribute('disabled')).toBe(false)
@@ -434,12 +434,12 @@ describe('unsupported files', () => {
     expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
   })
 
-  it('rejects a recording longer than 3 hours', async () => {
+  it('rejects a recording of 3 hours', async () => {
     actions.readAudioDuration.mockResolvedValueOnce(3 * 3600 + 1200)
     const sheet = renderSheet()
     await pickAny(sheet, makeFile('marathon.m4a'))
     expect(fileErrorText(sheet)).toBe(
-      'marathon.m4a is 3 hr 20 min long. Hark takes recordings up to 3 hours.'
+      'marathon.m4a is 3 hr 20 min long. Hark takes recordings up to 2 hours.'
     )
     expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
     expect(sheet.querySelector('.sheet-estimate').textContent).toBe(
@@ -447,8 +447,18 @@ describe('unsupported files', () => {
     )
   })
 
-  it('accepts a recording of exactly 3 hours', async () => {
-    actions.readAudioDuration.mockResolvedValueOnce(3 * 3600)
+  it('rejects a recording just over 2 hours', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(2 * 3600 + 60)
+    const sheet = renderSheet()
+    await pickAny(sheet, makeFile('seminar.m4a'))
+    expect(fileErrorText(sheet)).toBe(
+      'seminar.m4a is 2 hr 01 min long. Hark takes recordings up to 2 hours.'
+    )
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
+  })
+
+  it('accepts a recording of exactly 2 hours', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(2 * 3600)
     const sheet = renderSheet()
     await pickAny(sheet, makeFile('long.m4a'))
     expect(fileErrorText(sheet)).toBe('')

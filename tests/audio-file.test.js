@@ -28,7 +28,8 @@ describe('isAudioFile', () => {
 
 describe('describeAudioLimit', () => {
   it('names the limit in hours or minutes', () => {
-    expect(describeAudioLimit()).toBe(`${maxAudioSeconds / 3600} hours`)
+    expect(maxAudioSeconds).toBe(7200)
+    expect(describeAudioLimit()).toBe('2 hours')
     expect(describeAudioLimit(3600)).toBe('1 hour')
     expect(describeAudioLimit(7200)).toBe('2 hours')
     expect(describeAudioLimit(5400)).toBe('90 minutes')

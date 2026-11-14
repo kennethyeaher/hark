@@ -4,13 +4,16 @@
 /** the extensions the picker lists, for files the browser gives no audio type */
 export const audioExtensions = ['.m4a', '.mp3', '.wav', '.webm', '.ogg']
 
-/** the longest recording hark takes, in seconds */
-export const maxAudioSeconds = 3 * 60 * 60
+/**
+ * the longest recording hark takes, in seconds. the tab peaked at 2.3 GB on a 49 minute file and
+ * 3.7 GB near 3 hours in Chrome, so 2 hours leaves room on a laptop with less memory.
+ */
+export const maxAudioSeconds = 2 * 60 * 60
 
 /**
  * describe the length limit in words for the sheet.
  * @param {number} [seconds] the limit in seconds
- * @returns {string} for example `3 hours` or `90 minutes`
+ * @returns {string} for example `2 hours` or `90 minutes`
  * @throws {RangeError} when seconds is not a positive whole number of minutes
  */
 export function describeAudioLimit(seconds = maxAudioSeconds) {
