@@ -488,7 +488,12 @@ export function renderNewRecordingSheet({
     update()
   }
 
-  fileInput.addEventListener('change', () => pickFile(fileInput.files?.[0]))
+  fileInput.addEventListener('change', () => {
+    const file = fileInput.files?.[0]
+    // clearing the input lets the same file fire change again, for example after a failed read
+    fileInput.value = ''
+    pickFile(file)
+  })
 
   // drag and drop. the class drives the dragover style
   dropZone.addEventListener('dragover', (event) => {

@@ -225,6 +225,21 @@ describe('renderNewRecordingSheet', () => {
     expect(sheet.querySelector('.sheet-estimate').textContent).toMatch(/^Fast takes/)
   })
 
+  it('clears the input after a pick so the same file can be picked again', async () => {
+    const sheet = renderSheet()
+    const input = sheet.querySelector('input[type="file"]')
+    let value = 'C:\\fakepath\\lecture.m4a'
+    Object.defineProperty(input, 'value', {
+      get: () => value,
+      set: (next) => {
+        value = next
+      },
+      configurable: true,
+    })
+    await pickFile(sheet, makeFile())
+    expect(value).toBe('')
+  })
+
   it('takes a dropped file and clears the dragover state', async () => {
     const sheet = renderSheet()
     const zone = sheet.querySelector('.dropzone')
