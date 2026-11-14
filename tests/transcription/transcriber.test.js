@@ -167,6 +167,34 @@ describe('createTranscriber', () => {
     expect(done.segments.at(-1)).toMatchObject({ startSeconds: 657, endSeconds: 660 })
   })
 
+  it('drops a sentence whisper repeats across a window edge', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    const sentences = [
+      'The data goes to the company servers.',
+      'the data goes to the company servers',
+      'First, large language models.',
+    ]
+    let call = 0
+    fakePipeline.mockImplementation(async (samples) => {
+      const seconds = samples.length / whisperSampleRate
+      const text = sentences[call]
+      call += 1
+      return { chunks: [{ timestamp: [0, seconds], text }] }
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 'job',
+      samples: silence(windowSeconds * 2 + 60),
+      modelKey: 'balanced',
+    })
+    const chunks = posted.filter((message) => message.type === 'chunk')
+    expect(chunks.map((chunk) => chunk.segments.length)).toEqual([1, 1, 2])
+    expect(posted.at(-1).segments).toEqual([
+      { index: 0, startSeconds: 0, endSeconds: 297, text: sentences[0] },
+      { index: 1, startSeconds: 587, endSeconds: 660, text: sentences[2] },
+    ])
+  })
+
   it('loads each model once and reuses it', async () => {
     const { transcriber, posted, loadPipeline } = setup()
     const job = { type: 'transcribe', samples: silence(1), modelKey: 'balanced' }

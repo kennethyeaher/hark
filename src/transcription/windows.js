@@ -174,3 +174,44 @@ export function keepOwnedSegments(segments, { ownedStart, ownedEnd, isLast = fal
     return isLast ? midpoint <= ownedEnd : midpoint < ownedEnd
   })
 }
+
+// a repeat shorter than this many words, like "Yes. Yes.", is ordinary speech and stays
+const shortestRepeatWords = 4
+
+/**
+ * reduce segment text to lowercase letters and digits with single spaces, for comparing repeats.
+ * @param {string} text segment text
+ * @returns {string} the normalized text
+ */
+function normalizeText(text) {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim()
+}
+
+/**
+ * drop a segment whose normalized text matches the segment kept just before it, a guard against
+ * whisper repeating one sentence in a loop. only text of 4 or more words counts as a repeat.
+ * @param {Array<{ text: string }>} segments transcript segments in order
+ * @returns {Array<object>} new segment objects without the repeats, numbered again from 0
+ * @throws {TypeError} when segments is not an array or a segment has no text
+ */
+export function dropRepeatedSegments(segments) {
+  if (!Array.isArray(segments)) {
+    throw new TypeError(`segments must be an array, got ${String(segments)}`)
+  }
+  const kept = []
+  let previousText = null
+  segments.forEach((segment, position) => {
+    if (typeof segment?.text !== 'string') {
+      throw new TypeError(`segment ${position} text must be a string, got ${String(segment?.text)}`)
+    }
+    const text = normalizeText(segment.text)
+    const isRepeat = text === previousText && text.split(' ').length >= shortestRepeatWords
+    if (isRepeat) return
+    kept.push({ ...segment, index: kept.length })
+    previousText = text
+  })
+  return kept
+}

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { findQuietCuts, keepOwnedSegments, planWindows } from '../../src/transcription/windows.js'
+import {
+  dropRepeatedSegments,
+  findQuietCuts,
+  keepOwnedSegments,
+  planWindows,
+} from '../../src/transcription/windows.js'
 
 // a low sample rate keeps the synthetic arrays small; the search works in whole samples anyway
 const sampleRate = 100
@@ -166,5 +171,66 @@ describe('keepOwnedSegments', () => {
       /must not come before/
     )
     expect(() => keepOwnedSegments([], {})).toThrow(/ownedStart/)
+  })
+})
+
+describe('dropRepeatedSegments', () => {
+  /**
+   * make numbered segments from a list of texts, one second each.
+   * @param {string[]} texts segment texts
+   * @returns {Array<{ index: number, startSeconds: number, endSeconds: number, text: string }>}
+   *   segments in order
+   */
+  function makeSegments(texts) {
+    return texts.map((text, index) => ({ index, startSeconds: index, endSeconds: index + 1, text }))
+  }
+
+  it('drops a repeat of the segment before it and numbers the rest again', () => {
+    const segments = makeSegments([
+      'Hello there.',
+      'The United States is a very important source.',
+      'the United States, is a very important  source',
+      'THE UNITED STATES IS A VERY IMPORTANT SOURCE!',
+      'First, large language models.',
+    ])
+    expect(dropRepeatedSegments(segments)).toEqual([
+      { index: 0, startSeconds: 0, endSeconds: 1, text: 'Hello there.' },
+      {
+        index: 1,
+        startSeconds: 1,
+        endSeconds: 2,
+        text: 'The United States is a very important source.',
+      },
+      { index: 2, startSeconds: 4, endSeconds: 5, text: 'First, large language models.' },
+    ])
+  })
+
+  it('keeps short repeats and repeats that are not next to each other', () => {
+    const texts = ['Yes.', 'Yes.', 'One two three.', 'One two three.', 'Let us go on.', 'Okay.']
+    const withGap = ['Four words in here.', 'Something else.', 'Four words in here.']
+    expect(dropRepeatedSegments(makeSegments(texts))).toHaveLength(6)
+    expect(dropRepeatedSegments(makeSegments(withGap))).toHaveLength(3)
+  })
+
+  it('compares letters and digits in any script', () => {
+    const texts = [
+      'Ünïcode wörds 42 and more.',
+      'ünïcode wörds 42 and more',
+      'ünïcode wörds 43 and more',
+    ]
+    expect(dropRepeatedSegments(makeSegments(texts)).map((segment) => segment.index)).toEqual([
+      0, 1,
+    ])
+  })
+
+  it('does not change the segments it was given', () => {
+    const segments = makeSegments(['a b c d', 'a b c d', 'e'])
+    dropRepeatedSegments(segments)
+    expect(segments.map((segment) => segment.index)).toEqual([0, 1, 2])
+  })
+
+  it('rejects input that is not a list of segments with text', () => {
+    expect(() => dropRepeatedSegments(null)).toThrow(/segments must be an array/)
+    expect(() => dropRepeatedSegments([{ text: 3 }])).toThrow(/segment 0 text must be a string/)
   })
 })
