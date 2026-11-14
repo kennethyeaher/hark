@@ -185,3 +185,30 @@ describe('createTranscriptionClient', () => {
     expect(workers).toHaveLength(0)
   })
 })
+
+describe('createTranscriptionClient when a job cannot start', () => {
+  it('clears the job when the post throws, so the next call can run', async () => {
+    const client = createTranscriptionClient()
+    // a buffer that already moved cannot be transferred again, so the post throws
+    const moved = new Float32Array(4)
+    structuredClone(null, { transfer: [moved.buffer] })
+    await expect(client.transcribe({ samples: moved, durationSeconds: 1 })).rejects.toMatchObject({
+      name: 'DataCloneError',
+    })
+    const next = client.transcribe({ samples: samples(), durationSeconds: 1 })
+    workers[0].reply({ type: 'done', jobId: 2, segments: [] })
+    await expect(next).resolves.toEqual([])
+  })
+
+  it('copies a view into a larger buffer instead of moving the whole buffer', async () => {
+    const client = createTranscriptionClient()
+    const whole = new Float32Array(10)
+    const view = whole.subarray(2, 6)
+    const job = client.transcribe({ samples: view, durationSeconds: 1 })
+    const [{ transfer }] = workers[0].sent
+    expect(transfer[0]).not.toBe(whole.buffer)
+    expect(whole).toHaveLength(10)
+    workers[0].reply({ type: 'done', jobId: 1, segments: [] })
+    await job
+  })
+})

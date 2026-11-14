@@ -100,7 +100,7 @@ export function createTranscriptionClient() {
 
   /**
    * transcribe 16 kHz mono samples. the samples buffer moves to the worker and is empty here
-   * afterward.
+   * afterward, unless samples is a view into a larger buffer, which is copied instead.
    * @param {{ samples: Float32Array, durationSeconds: number, modelKey?: string,
    *   onDownload?: (progress: { fraction: number, loadedBytes: number, totalBytes: number }) => void,
    *   onReady?: () => void,
@@ -142,9 +142,22 @@ export function createTranscriptionClient() {
 
     const jobId = nextJobId
     nextJobId += 1
+    // a view into a larger buffer is copied first, so only these samples move to the worker
+    const isWholeBuffer =
+      samples.byteOffset === 0 && samples.byteLength === samples.buffer.byteLength
+    const sendable = isWholeBuffer ? samples : samples.slice()
     return new Promise((resolve, reject) => {
       pending = { jobId, durationSeconds, onDownload, onReady, onChunk, resolve, reject }
-      ensureWorker().postMessage({ type: 'transcribe', jobId, samples, modelKey }, [samples.buffer])
+      // a post that throws, for example on a buffer that already moved, must not leave a job
+      // pending forever, or every later call would report one already running
+      try {
+        ensureWorker().postMessage({ type: 'transcribe', jobId, samples: sendable, modelKey }, [
+          sendable.buffer,
+        ])
+      } catch (error) {
+        pending = null
+        throw error
+      }
     })
   }
 
