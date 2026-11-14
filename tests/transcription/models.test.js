@@ -15,6 +15,11 @@ describe('transcription models', () => {
       'Balanced',
       'Accurate',
     ])
+    expect(Object.values(transcriptionModels).map((model) => model.name)).toEqual([
+      'Whisper tiny',
+      'Whisper base',
+      'Whisper small',
+    ])
     const factors = ['fast', 'balanced', 'accurate'].map(
       (key) => getModel(key).secondsPerAudioSecond
     )

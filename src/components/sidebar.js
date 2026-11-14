@@ -281,6 +281,9 @@ export function setSidebarActive(sidebarElement, route) {
   let match = null
   if (route.name === 'home') {
     match = sidebarElement.querySelector('[data-route-key="home"]')
+  } else if (route.name === 'new') {
+    // the New button stands for the sheet while it is open
+    match = sidebarElement.querySelector('.sidebar-new-button')
   } else if (route.name === 'course') {
     const courseLinks = sidebarElement.querySelectorAll('[data-course-id]')
     match = [...courseLinks].find((link) => link.dataset.courseId === route.params?.id) ?? null
