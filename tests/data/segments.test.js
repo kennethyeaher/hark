@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useFreshDatabase } from './fresh-database.js'
 import { saveCourse } from '../../src/data/courses.js'
-import { saveRecording } from '../../src/data/recordings.js'
+import { getRecording, saveRecording } from '../../src/data/recordings.js'
 import {
   deleteSegments,
   getSegment,
@@ -119,5 +119,26 @@ describe('segments', () => {
 
   it('allows a segment that starts and ends at the same time', () => {
     expect(normalizeSegment(makeSegment({ startSeconds: 3, endSeconds: 3 })).endSeconds).toBe(3)
+  })
+})
+
+describe('saveSegments with status changes', () => {
+  it('writes the segments and the recording progress together', async () => {
+    await saveSegments('lecture17', [makeSegment()], { status: 'transcribing', progress: 0.4 })
+    const recording = await getRecording('lecture17')
+    expect(recording.status).toBe('transcribing')
+    expect(recording.progress).toBe(0.4)
+    expect(await listSegmentsForRecording('lecture17')).toHaveLength(1)
+  })
+
+  it('writes nothing when the status changes are invalid', async () => {
+    await expect(saveSegments('lecture17', [makeSegment()], { progress: 1.5 })).rejects.toThrow(
+      RangeError
+    )
+    await expect(saveSegments('lecture17', [makeSegment()], { title: 'x' })).rejects.toThrow(
+      /can only set/
+    )
+    expect(await listSegmentsForRecording('lecture17')).toEqual([])
+    expect((await getRecording('lecture17')).progress).toBe(0)
   })
 })

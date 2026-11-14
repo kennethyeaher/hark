@@ -9,6 +9,7 @@ import {
   restoreRecording,
   saveRecording,
   trashRecording,
+  updateRecordingStatus,
 } from '../../src/data/recordings.js'
 import { getNote, saveNote } from '../../src/data/notes.js'
 import { listMomentsForRecording, saveMoment } from '../../src/data/moments.js'
@@ -301,5 +302,38 @@ describe('delete forever with notes and moments', () => {
 
   it('does nothing when the recording does not exist', async () => {
     await expect(deleteRecordingForever('missing')).resolves.toBeUndefined()
+  })
+})
+
+describe('updateRecordingStatus', () => {
+  it('changes status, progress, and the error message, and keeps every other field', async () => {
+    await saveRecording(makeRecording({ status: 'queued', progress: 0 }))
+    const stored = await updateRecordingStatus('week9', {
+      status: 'failed',
+      progress: 0.5,
+      errorMessage: 'This file could not be read as audio',
+    })
+    expect(stored.status).toBe('failed')
+    expect(stored.progress).toBe(0.5)
+    expect(stored.errorMessage).toBe('This file could not be read as audio')
+    expect((await getRecording('week9')).title).toBe('Week 9 · Thematic analysis')
+  })
+
+  it('refuses fields other than status, progress, and errorMessage', async () => {
+    await saveRecording(makeRecording())
+    await expect(updateRecordingStatus('week9', { title: 'Renamed' })).rejects.toThrow(
+      /can only set status, progress, errorMessage, got title/
+    )
+    expect((await getRecording('week9')).title).toBe('Week 9 · Thematic analysis')
+  })
+
+  it('rejects a bad status, bad progress, and a missing recording', async () => {
+    await saveRecording(makeRecording())
+    await expect(updateRecordingStatus('week9', { status: 'paused' })).rejects.toThrow(TypeError)
+    await expect(updateRecordingStatus('week9', { progress: 2 })).rejects.toThrow(RangeError)
+    await expect(updateRecordingStatus('missing', { progress: 0 })).rejects.toThrow(
+      'no recording with id missing'
+    )
+    await expect(updateRecordingStatus('week9', null)).rejects.toThrow(/must be an object/)
   })
 })

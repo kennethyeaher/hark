@@ -159,6 +159,46 @@ async function updateRecording(id, change) {
   return stored
 }
 
+// the fields a transcription job may change on a recording as it runs
+const statusFields = ['status', 'progress', 'errorMessage']
+
+/**
+ * copy a recording with new status fields and check the result. only status, progress, and
+ * errorMessage can change this way, so a job cannot rename or move a recording by mistake.
+ * @param {object} recording the stored recording
+ * @param {{ status?: string, progress?: number, errorMessage?: string | null }} changes
+ *   the fields to change
+ * @returns {object} the changed recording, ready to store
+ * @throws {TypeError} when changes is not an object, names another field, or the result
+ *   fails validation
+ * @throws {RangeError} when progress is outside 0 to 1
+ */
+export function applyStatusChanges(recording, changes) {
+  assertObject(changes, 'status changes')
+  const unknownFields = Object.keys(changes).filter((field) => !statusFields.includes(field))
+  if (unknownFields.length > 0) {
+    throw new TypeError(
+      `status changes can only set ${statusFields.join(', ')}, got ${unknownFields.join(', ')}`
+    )
+  }
+  return normalizeRecording({ ...recording, ...changes })
+}
+
+/**
+ * change the status, progress, or error message of a stored recording.
+ * @param {string} id recording id
+ * @param {{ status?: string, progress?: number, errorMessage?: string | null }} changes
+ *   the fields to change
+ * @returns {Promise<object>} the recording as stored
+ * @throws {Error} when there is no recording with that id
+ * @throws {TypeError} when changes names another field or the result fails validation
+ * @throws {RangeError} when progress is outside 0 to 1
+ */
+export async function updateRecordingStatus(id, changes) {
+  assertObject(changes, 'status changes')
+  return updateRecording(id, (recording) => applyStatusChanges(recording, changes))
+}
+
 /**
  * move a recording to Trash by setting deletedAt. its data stays until it is deleted forever.
  * @param {string} id recording id

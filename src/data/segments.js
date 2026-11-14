@@ -3,6 +3,7 @@
 import { abortTransaction, openDatabase } from './db.js'
 import { announceChange } from './events.js'
 import { assertNonNegativeNumber, assertObject, assertText } from './validate.js'
+import { applyStatusChanges } from './recordings.js'
 
 /**
  * check a segment and copy only the fields the store keeps. a segment without an id gets a new one.
@@ -71,15 +72,18 @@ export async function listSegmentsForRecording(recordingId) {
 /**
  * replace every segment of a recording with a new list, in one transaction, so a reader never
  * sees half of an old transcript mixed with a new one. segments without a recordingId take
- * the one passed in.
+ * the one passed in. status changes, when given, are written to the recording in the same
+ * transaction, so a running job writes once per chunk.
  * @param {string} recordingId recording the transcript belongs to
  * @param {object[]} segments the full new transcript, possibly empty
+ * @param {{ status?: string, progress?: number, errorMessage?: string | null }} [statusChanges]
+ *   fields to change on the recording at the same time
  * @returns {Promise<object[]>} the segments as stored
- * @throws {TypeError} when a segment fails validation, names another recording, or the
- *   recording does not exist
- * @throws {RangeError} when a segment has bad times or index
+ * @throws {TypeError} when a segment fails validation, names another recording, the
+ *   recording does not exist, or the status changes are invalid
+ * @throws {RangeError} when a segment has bad times or index, or progress is outside 0 to 1
  */
-export async function saveSegments(recordingId, segments) {
+export async function saveSegments(recordingId, segments, statusChanges) {
   assertText(recordingId, 'recordingId')
   if (!Array.isArray(segments)) {
     throw new TypeError(`segments for ${recordingId} must be an array, got ${String(segments)}`)
@@ -98,19 +102,31 @@ export async function saveSegments(recordingId, segments) {
 
   const database = await openDatabase()
   const transaction = database.transaction(['recordings', 'segments'], 'readwrite')
-  const recording = await transaction.objectStore('recordings').get(recordingId)
+  const recordingStore = transaction.objectStore('recordings')
+  const recording = await recordingStore.get(recordingId)
   if (!recording) {
     await abortTransaction(transaction)
     throw new TypeError(`segments point to recording ${recordingId}, which does not exist`)
+  }
+  let changedRecording = null
+  if (statusChanges !== undefined) {
+    try {
+      changedRecording = applyStatusChanges(recording, statusChanges)
+    } catch (error) {
+      await abortTransaction(transaction)
+      throw error
+    }
   }
   const segmentStore = transaction.objectStore('segments')
   const oldIds = await segmentStore.index('recordingId').getAllKeys(recordingId)
   await Promise.all([
     ...oldIds.map((id) => segmentStore.delete(id)),
     ...stored.map((segment) => segmentStore.put(segment)),
+    changedRecording && recordingStore.put(changedRecording),
     transaction.done,
   ])
   announceChange('segments', recordingId)
+  if (changedRecording) announceChange('recordings', recordingId)
   return stored
 }
 
