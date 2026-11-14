@@ -56,9 +56,9 @@ function describeFile(file) {
 }
 
 /**
- * read an audio file and resample it to 16 kHz mono for whisper.
- * the browser decodes the file at its default rate, the channels are mixed with `mixToMono`,
- * and an OfflineAudioContext resamples the result.
+ * read an audio file as 16 kHz mono for whisper. an OfflineAudioContext at 16 kHz decodes the
+ * file, and the browser resamples while it decodes, so there is no second pass. the channels
+ * are then mixed with `mixToMono`.
  * @param {Blob} file the uploaded File
  * @returns {Promise<{ samples: Float32Array, durationSeconds: number }>} mono samples at 16 kHz
  *   and the length of the audio
@@ -71,36 +71,23 @@ export async function decodeAudioFile(file) {
   }
   const bytes = await file.arrayBuffer()
 
-  // decode to the context's rate, usually 44.1 or 48 kHz. the context is only used for decoding,
-  // so close it after.
-  const context = new AudioContext()
+  // decodeAudioData returns audio at the context's rate, so a 16 kHz offline context does the
+  // resampling. it never renders, so its own length of one sample does not matter
+  const context = new OfflineAudioContext(1, 1, whisperSampleRate)
   let decoded
   try {
     decoded = await context.decodeAudioData(bytes)
   } catch (error) {
     throw new AudioDecodeError(`could not read ${describeFile(file)} as audio`, { cause: error })
-  } finally {
-    await context.close()
   }
   if (decoded.length === 0) {
     throw new AudioDecodeError(`${describeFile(file)} has no audio in it`)
   }
 
-  // mix to one channel at the original rate, then let an offline context resample it
+  // the decoded buffer keeps the file's channels, so mix them down to one
   const channels = []
   for (let channel = 0; channel < decoded.numberOfChannels; channel += 1) {
     channels.push(decoded.getChannelData(channel))
   }
-  const mono = mixToMono(channels)
-  const length = Math.ceil(decoded.duration * whisperSampleRate)
-  const offline = new OfflineAudioContext(1, length, whisperSampleRate)
-  const monoBuffer = offline.createBuffer(1, mono.length, decoded.sampleRate)
-  monoBuffer.copyToChannel(mono, 0)
-  const source = offline.createBufferSource()
-  source.buffer = monoBuffer
-  source.connect(offline.destination)
-  source.start()
-  const rendered = await offline.startRendering()
-
-  return { samples: rendered.getChannelData(0), durationSeconds: decoded.duration }
+  return { samples: mixToMono(channels), durationSeconds: decoded.duration }
 }
