@@ -2,8 +2,8 @@
 
 import { env, pipeline } from '@huggingface/transformers'
 import { createTranscriber } from './transcriber.js'
-import onnxRuntimeWasmUrl from 'onnx-runtime-wasm?url'
-import onnxRuntimeLoaderUrl from 'onnx-runtime-loader?url'
+import onnxRuntimeWasmUrl from '/onnx-runtime/wasm?url'
+import onnxRuntimeLoaderUrl from '/onnx-runtime/loader?url'
 
 // models come only from the hugging face hub and stay in the browser cache after the first visit
 env.allowLocalModels = false

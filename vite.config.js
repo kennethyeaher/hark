@@ -2,7 +2,8 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
 // the onnx runtime files ship inside transformers.js, but its package exports block a direct
-// import, so each file gets an alias that points at the dist folder
+// import, so each file gets an alias that points at the dist folder. the aliases start with a
+// slash so the dev server treats them as files and does not try to pre bundle them as packages
 const transformersDist = fileURLToPath(
   new URL('./node_modules/@huggingface/transformers/dist/', import.meta.url)
 )
@@ -13,11 +14,11 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^onnx-runtime-wasm(?=\?|$)/,
+        find: /^\/onnx-runtime\/wasm(?=\?|$)/,
         replacement: `${transformersDist}ort-wasm-simd-threaded.jsep.wasm`,
       },
       {
-        find: /^onnx-runtime-loader(?=\?|$)/,
+        find: /^\/onnx-runtime\/loader(?=\?|$)/,
         replacement: `${transformersDist}ort-wasm-simd-threaded.jsep.mjs`,
       },
     ],
