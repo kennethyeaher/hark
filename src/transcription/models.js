@@ -10,7 +10,7 @@
 export const transcriptionModels = Object.freeze({
   fast: Object.freeze({
     key: 'fast',
-    downloadMegabytes: 41,
+    downloadMegabytes: 45,
     name: 'Whisper tiny',
     label: 'Fast',
     modelId: 'onnx-community/whisper-tiny',
@@ -26,7 +26,7 @@ export const transcriptionModels = Object.freeze({
   }),
   accurate: Object.freeze({
     key: 'accurate',
-    downloadMegabytes: 250,
+    downloadMegabytes: 253,
     name: 'Whisper small',
     label: 'Accurate',
     modelId: 'onnx-community/whisper-small',
