@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { renderHome } from '../src/pages/home.js'
-import { renderRecordingTable, renderRecordingStatus } from '../src/components/recording-table.js'
+import { renderRecordingTable } from '../src/components/recording-table.js'
+import { renderRecordingStatus } from '../src/components/recording-status.js'
 import { buildSampleView } from './sample-library.js'
 
 // a fixed afternoon so every sample date lands on a known label

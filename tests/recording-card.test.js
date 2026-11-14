@@ -73,6 +73,21 @@ describe('renderRecordingCard', () => {
     expect(() => renderRecordingCard({ recording: null, course })).toThrow(TypeError)
     expect(() => renderRecordingCard({ recording, course, meta: 'size' })).toThrow(TypeError)
   })
+
+  it('shows no status badge for a summarized recording', () => {
+    const card = renderRecordingCard({ recording, course, now })
+    expect(card.querySelector('.status-badge')).toBeNull()
+  })
+
+  it('shows a status badge inside the link for every other status', () => {
+    const failed = { ...recording, status: 'failed', errorMessage: 'bad file' }
+    const failedCard = renderRecordingCard({ recording: failed, course, now })
+    expect(failedCard.querySelector('a .status-badge').textContent).toBe('Failed')
+
+    const running = { ...recording, status: 'transcribing', progress: 0.64 }
+    const runningCard = renderRecordingCard({ recording: running, course, now })
+    expect(runningCard.querySelector('.status-badge').textContent).toBe('Transcribing 64%')
+  })
 })
 
 describe('renderRecordingIcon', () => {

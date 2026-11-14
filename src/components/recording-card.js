@@ -1,6 +1,7 @@
 import { createElement, createIcon } from '../lib/dom.js'
 import { courseColors, formatDuration, formatRelativeDate } from '../lib/format.js'
 import { renderWaveform } from './waveform.js'
+import { renderStatusBadge } from './recording-status.js'
 
 const moreIconPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01']
 
@@ -31,11 +32,13 @@ function validateRecordingAndCourse(recording, course) {
 }
 
 /**
- * render a recording card with waveform, title, meta line, and a placeholder More button.
+ * render a recording card with waveform, status badge, title, meta line, and a placeholder
+ * More button. a summarized recording shows no badge.
  * @param {{ recording: object, course: object, meta?: 'course' | 'date', now?: Date }} options
  *   meta picks the course code or the relative date for the meta line
  * @returns {HTMLElement} the article element
  * @throws {TypeError} when recording, course, or meta is invalid
+ * @throws {RangeError} when the status is unknown or progress is outside 0 to 1
  */
 export function renderRecordingCard({ recording, course, meta = 'course', now = new Date() }) {
   validateRecordingAndCourse(recording, course)
@@ -58,7 +61,11 @@ export function renderRecordingCard({ recording, course, meta = 'course', now = 
         'aria-hidden': 'true',
         style: `background: var(--course-${course.color})`,
       }),
-      renderWaveform({ seed: recording.id, color: course.color }),
+      // the waveform shrinks to make room when a badge sits beside it
+      createElement('span', { className: 'recording-card-top' }, [
+        renderWaveform({ seed: recording.id, color: course.color }),
+        renderStatusBadge(recording),
+      ]),
       createElement('h3', {
         className: 'recording-card-title',
         text: recording.title,

@@ -50,6 +50,33 @@
   height: 4px;
 }
 
+.recording-card-top {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+  min-height: 38px;
+}
+
+.recording-card-top .waveform {
+  min-width: 0;
+}
+
+/* small status pill on cards. white keeps the text colors on a surface they were checked on */
+.status-badge {
+  display: inline-flex;
+  flex: none;
+  gap: var(--space-1);
+  align-items: center;
+  padding: 2px var(--space-2);
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-pill);
+}
+
 .recording-card-title {
   margin-top: 14px;
   overflow: hidden;
@@ -298,7 +325,7 @@
 
 /*
   status: gray for queued and transcribed, green check for summarized, red alert for
-  failed, and a blue bar with the percent while transcribing
+  failed, and blue with the percent while transcribing. tables and card badges share these
 */
 .recording-status {
   display: inline-flex;
@@ -323,6 +350,24 @@
 .recording-status-working {
   gap: var(--space-2);
   color: var(--color-blue);
+}
+
+/* a failed row stacks the error message under the word, cut to one line */
+.recording-status-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recording-status-message {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .recording-progress {
