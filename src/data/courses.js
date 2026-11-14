@@ -60,3 +60,22 @@ export async function saveCourse(course) {
   announceChange('courses', stored.id)
   return stored
 }
+
+/**
+ * pick the color for a new course: the first course color no live course uses yet, or,
+ * once every color is taken, the next one in order so the colors cycle from the start.
+ * @param {Array<{ color: string, deletedAt?: Date | null }>} courses courses that exist now
+ * @returns {string} a course color
+ * @throws {TypeError} when courses is not an array
+ */
+export function nextCourseColor(courses) {
+  if (!Array.isArray(courses)) {
+    throw new TypeError(`nextCourseColor needs an array of courses, got ${String(courses)}`)
+  }
+  const liveCourses = courses.filter((course) => !course?.deletedAt)
+  const usedColors = new Set(liveCourses.map((course) => course?.color))
+  const unusedColor = courseColors.find((color) => !usedColors.has(color))
+  if (unusedColor) return unusedColor
+  // every color is in use, so count around the list again from the first color
+  return courseColors[liveCourses.length % courseColors.length]
+}

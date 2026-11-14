@@ -12,6 +12,8 @@ import {
 } from '../../src/data/recordings.js'
 import { getNote, saveNote } from '../../src/data/notes.js'
 import { listMomentsForRecording, saveMoment } from '../../src/data/moments.js'
+import { getAudio, saveAudio } from '../../src/data/audio.js'
+import { listSegmentsForRecording, saveSegments } from '../../src/data/segments.js'
 
 /**
  * build a valid recording with fields that a test can override.
@@ -30,6 +32,8 @@ function makeRecording(overrides = {}) {
     progress: 1,
     isStarred: true,
     deletedAt: null,
+    model: 'balanced',
+    errorMessage: null,
     ...overrides,
   }
 }
@@ -70,9 +74,22 @@ describe('saveRecording', () => {
       progress: 0,
       isStarred: false,
       deletedAt: null,
+      model: 'balanced',
+      errorMessage: null,
     })
     expect(saved.createdAt).toBeInstanceOf(Date)
     expect(await getRecording(saved.id)).toEqual(saved)
+  })
+
+  it('keeps a model choice and an error message', async () => {
+    await saveRecording(
+      makeRecording({ model: 'fast', status: 'failed', errorMessage: 'decoding failed' })
+    )
+    expect(await getRecording('week9')).toMatchObject({
+      model: 'fast',
+      status: 'failed',
+      errorMessage: 'decoding failed',
+    })
   })
 
   it('drops fields the store does not keep', async () => {
@@ -106,6 +123,18 @@ describe('recording validation', () => {
       /progress must be a number from 0 to 1, got 1.2/,
     ],
     ['progress below 0', { progress: -0.1 }, RangeError, /progress must be a number from 0 to 1/],
+    [
+      'an unknown model',
+      { model: 'huge' },
+      TypeError,
+      /model must be one of fast, balanced, accurate, got huge/,
+    ],
+    [
+      'an errorMessage that is not a string',
+      { errorMessage: 42 },
+      TypeError,
+      /errorMessage must be a string or null, got 42/,
+    ],
     [
       'progress that is NaN',
       { progress: Number.NaN },
@@ -248,6 +277,26 @@ describe('delete forever with notes and moments', () => {
     expect(await getRecording('week8')).toBeDefined()
     expect((await getNote('week8')).body).toBe('stays')
     expect((await listMomentsForRecording('week8')).map((stored) => stored.id)).toEqual(['c'])
+  })
+
+  it('removes the audio and segments too, and leaves other recordings alone', async () => {
+    await saveRecording(makeRecording({ id: 'week9' }))
+    await saveRecording(makeRecording({ id: 'week8' }))
+    for (const recordingId of ['week9', 'week8']) {
+      const file = new File([new Uint8Array([1])], `${recordingId}.wav`, { type: 'audio/wav' })
+      await saveAudio({ recordingId, blob: file })
+      await saveSegments(recordingId, [
+        { index: 0, startSeconds: 0, endSeconds: 2, text: 'First line.' },
+        { index: 1, startSeconds: 2, endSeconds: 5, text: 'Second line.' },
+      ])
+    }
+
+    await deleteRecordingForever('week9')
+
+    expect(await getAudio('week9')).toBeUndefined()
+    expect(await listSegmentsForRecording('week9')).toEqual([])
+    expect((await getAudio('week8')).name).toBe('week8.wav')
+    expect(await listSegmentsForRecording('week8')).toHaveLength(2)
   })
 
   it('does nothing when the recording does not exist', async () => {

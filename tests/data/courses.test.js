@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { useFreshDatabase } from './fresh-database.js'
-import { getCourse, listCourses, normalizeCourse, saveCourse } from '../../src/data/courses.js'
+import {
+  getCourse,
+  listCourses,
+  nextCourseColor,
+  normalizeCourse,
+  saveCourse,
+} from '../../src/data/courses.js'
 
 const course = {
   id: 'hcim605',
@@ -56,5 +62,32 @@ describe('course validation', () => {
 
   it('rejects a blank id when reading', async () => {
     await expect(getCourse('')).rejects.toThrow(/course id must be a non empty string/)
+  })
+})
+
+describe('nextCourseColor', () => {
+  it('gives the first color when there are no courses', () => {
+    expect(nextCourseColor([])).toBe('indigo')
+  })
+
+  it('gives the first color no course uses yet', () => {
+    expect(nextCourseColor([{ color: 'indigo' }, { color: 'orange' }])).toBe('teal')
+    expect(nextCourseColor([{ color: 'teal' }])).toBe('indigo')
+  })
+
+  it('ignores courses that are deleted', () => {
+    const courses = [{ color: 'indigo' }, { color: 'teal', deletedAt: new Date(2026, 10, 1) }]
+    expect(nextCourseColor(courses)).toBe('teal')
+  })
+
+  it('cycles from the start once every color is used', () => {
+    const four = [{ color: 'indigo' }, { color: 'teal' }, { color: 'orange' }, { color: 'pink' }]
+    expect(nextCourseColor(four)).toBe('indigo')
+    expect(nextCourseColor([...four, { color: 'indigo' }])).toBe('teal')
+    expect(nextCourseColor([...four, ...four])).toBe('indigo')
+  })
+
+  it('rejects input that is not an array', () => {
+    expect(() => nextCourseColor(null)).toThrow(/needs an array of courses, got null/)
   })
 })
