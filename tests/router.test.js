@@ -30,6 +30,22 @@ describe('parseRoute', () => {
     expect(parseRoute('#/recording/rec-12').params).toEqual({ id: 'rec-12' })
   })
 
+  it('reads the id from the transcribe route', () => {
+    expect(parseRoute('#/transcribe/rec-12')).toEqual({
+      name: 'transcribe',
+      params: { id: 'rec-12' },
+      query: {},
+    })
+  })
+
+  it('reads the course from the new route', () => {
+    expect(parseRoute('#/new?course=inst630')).toEqual({
+      name: 'new',
+      params: {},
+      query: { course: 'inst630' },
+    })
+  })
+
   it('decodes an encoded id', () => {
     expect(parseRoute('#/course/inst%20630').params.id).toBe('inst 630')
   })

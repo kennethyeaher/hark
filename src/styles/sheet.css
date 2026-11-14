@@ -422,31 +422,6 @@
   margin-left: auto;
 }
 
-.button-plain {
-  color: var(--color-label);
-  background: transparent;
-  border: 0;
-}
-
-.button-plain:hover {
-  background: var(--color-grouped);
-}
-
-.button-small {
-  height: 34px;
-  padding: 0 var(--space-3);
-  font-size: var(--text-14);
-}
-
-.button.button-primary {
-  border: 0;
-}
-
-.button:disabled {
-  cursor: not-allowed;
-  opacity: 0.45;
-}
-
 /* phones: one source card per row and a little less padding */
 @media (max-width: 520px) {
   .sheet-body {

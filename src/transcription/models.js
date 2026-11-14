@@ -2,12 +2,14 @@
 
 /**
  * each choice names its hugging face model, the label shown in the ui, the model name shown
- * under it, and how many seconds of work one second of audio takes. the speed factors are
- * first guesses for the browser, tuned once real files run there.
+ * under it, the size of its q8 download in megabytes, and how many seconds of work one second
+ * of audio takes. the speed factors are first guesses for the browser, tuned once real files
+ * run there.
  */
 export const transcriptionModels = Object.freeze({
   fast: Object.freeze({
     key: 'fast',
+    downloadMegabytes: 41,
     name: 'Whisper tiny',
     label: 'Fast',
     modelId: 'onnx-community/whisper-tiny',
@@ -15,6 +17,7 @@ export const transcriptionModels = Object.freeze({
   }),
   balanced: Object.freeze({
     key: 'balanced',
+    downloadMegabytes: 80,
     name: 'Whisper base',
     label: 'Balanced',
     modelId: 'onnx-community/whisper-base',
@@ -22,6 +25,7 @@ export const transcriptionModels = Object.freeze({
   }),
   accurate: Object.freeze({
     key: 'accurate',
+    downloadMegabytes: 250,
     name: 'Whisper small',
     label: 'Accurate',
     modelId: 'onnx-community/whisper-small',
@@ -36,7 +40,7 @@ export const defaultModelKey = 'balanced'
  * look up one model choice by its key.
  * @param {string} key `fast`, `balanced`, or `accurate`
  * @returns {{ key: string, label: string, name: string, modelId: string,
- *   secondsPerAudioSecond: number }}
+ *   downloadMegabytes: number, secondsPerAudioSecond: number }}
  *   the model choice
  * @throws {RangeError} when the key is not one of the three choices
  */

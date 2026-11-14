@@ -9,11 +9,13 @@ import { getView, subscribeToView } from './view.js'
 import { renderHome } from '../pages/home.js'
 import { renderCourse } from '../pages/course.js'
 import { renderNewRecordingSheet } from '../pages/new-recording.js'
+import { renderTranscribing } from '../pages/transcribing.js'
 
 // pages built so far, keyed by route name
 const pageRenderers = {
   home: renderHome,
   course: renderCourse,
+  transcribe: renderTranscribing,
 }
 
 // titles for routes whose pages arrive in later milestones
