@@ -16,8 +16,8 @@ const courses = [
     recordingCount: 12,
   },
   {
-    id: 'inst360',
-    code: 'INST 360',
+    id: 'inst630',
+    code: 'INST 630',
     name: 'Information Ethics',
     color: 'teal',
     recordingCount: 10,
@@ -61,7 +61,7 @@ describe('renderSidebar', () => {
       '#/starred',
       '#/trash',
       '#/course/hcim605',
-      '#/course/inst360',
+      '#/course/inst630',
       '#/course/info615',
       '#/course/hcim620',
       '#/settings',
@@ -76,8 +76,8 @@ describe('renderSidebar', () => {
   })
 
   it('marks only the matching course on a course route', () => {
-    const sidebar = build('course', { id: 'inst360' })
-    expect(currentHrefs(sidebar)).toEqual(['#/course/inst360'])
+    const sidebar = build('course', { id: 'inst630' })
+    expect(currentHrefs(sidebar)).toEqual(['#/course/inst630'])
     expect(sidebar.querySelector('[data-route-key="home"]').hasAttribute('aria-current')).toBe(
       false
     )

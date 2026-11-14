@@ -14,7 +14,7 @@ describe('buildSampleLibrary', () => {
     const { courses } = buildSampleLibrary(now)
     expect(courses.map((course) => [course.code, course.name])).toEqual([
       ['HCIM 605', 'Qualitative Research Methods'],
-      ['INST 360', 'Programming Human-Centered Interfaces'],
+      ['INST 630', 'Programming Human-Centered Interfaces'],
       ['INST 737', 'Data Science Techniques'],
       ['INST 711', 'Interaction Design Studio'],
     ])
@@ -87,7 +87,7 @@ describe('seedSampleLibrary', () => {
       library.courses.map((course) => [course.code, course.recordingCount, course.totalSeconds])
     ).toEqual([
       ['HCIM 605', 8, 482 * 60],
-      ['INST 360', 1, 52 * 60],
+      ['INST 630', 1, 52 * 60],
       ['INST 737', 1, 41 * 60],
       ['INST 711', 1, 58 * 60],
     ])

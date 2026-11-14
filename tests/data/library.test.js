@@ -19,8 +19,8 @@ const hcim = {
   color: 'indigo',
 }
 const inst = {
-  id: 'inst360',
-  code: 'INST 360',
+  id: 'inst630',
+  code: 'INST 630',
   name: 'Programming Human-Centered Interfaces',
   color: 'teal',
 }
@@ -54,14 +54,14 @@ describe('buildLibrary', () => {
         row({ id: 'a', durationSeconds: 600 }),
         row({ id: 'b', durationSeconds: 900 }),
         row({ id: 'c', durationSeconds: 300, deletedAt: new Date(2026, 9, 30) }),
-        row({ id: 'd', courseId: 'inst360', durationSeconds: 120 }),
+        row({ id: 'd', courseId: 'inst630', durationSeconds: 120 }),
       ],
       notes: [],
     })
     const totals = Object.fromEntries(
       library.courses.map((course) => [course.id, [course.recordingCount, course.totalSeconds]])
     )
-    expect(totals).toEqual({ hcim605: [2, 1500], inst360: [1, 120] })
+    expect(totals).toEqual({ hcim605: [2, 1500], inst630: [1, 120] })
     expect(library.recordings.map((recording) => recording.id).sort()).toEqual(['a', 'b', 'd'])
   })
 
@@ -112,13 +112,13 @@ describe('buildLibrary', () => {
     const library = buildLibrary({
       courses: [policy, inst, hcim],
       recordings: [
-        row({ id: 'old', courseId: 'inst360', recordedAt: new Date(2026, 9, 1) }),
+        row({ id: 'old', courseId: 'inst630', recordedAt: new Date(2026, 9, 1) }),
         row({ id: 'new', courseId: 'hcim605', recordedAt: new Date(2026, 9, 28) }),
       ],
       notes: [],
     })
     expect(library.recordings.map((recording) => recording.id)).toEqual(['new', 'old'])
-    expect(library.courses.map((course) => course.id)).toEqual(['hcim605', 'inst360', 'inst711'])
+    expect(library.courses.map((course) => course.id)).toEqual(['hcim605', 'inst630', 'inst711'])
   })
 
   it('rejects input that is not three arrays', () => {

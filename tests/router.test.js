@@ -31,7 +31,7 @@ describe('parseRoute', () => {
   })
 
   it('decodes an encoded id', () => {
-    expect(parseRoute('#/course/inst%20360').params.id).toBe('inst 360')
+    expect(parseRoute('#/course/inst%20630').params.id).toBe('inst 630')
   })
 
   it('parses and decodes the search query', () => {

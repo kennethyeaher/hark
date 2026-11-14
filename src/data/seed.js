@@ -15,7 +15,7 @@ import { normalizeNote } from './notes.js'
 
 const sampleCourses = [
   { id: 'hcim605', code: 'HCIM 605', name: 'Qualitative Research Methods', color: 'indigo' },
-  { id: 'inst360', code: 'INST 360', name: 'Programming Human-Centered Interfaces', color: 'teal' },
+  { id: 'inst630', code: 'INST 630', name: 'Programming Human-Centered Interfaces', color: 'teal' },
   { id: 'inst737', code: 'INST 737', name: 'Data Science Techniques', color: 'orange' },
   { id: 'inst711', code: 'INST 711', name: 'Interaction Design Studio', color: 'pink' },
 ]
@@ -23,7 +23,7 @@ const sampleCourses = [
 // one entry per recording in the mocks: id, title, course, minutes, and days before now
 const recordingRows = [
   ['week9-thematic-analysis', 'Week 9 · Thematic analysis', 'hcim605', 74, 0],
-  ['lecture17-client-side-ml', 'Lecture 17 · Client-side ML', 'inst360', 52, 0],
+  ['lecture17-client-side-ml', 'Lecture 17 · Client-side ML', 'inst630', 52, 0],
   ['guest-talk-design-ethics', 'Guest talk · Design ethics', 'inst737', 41, 1],
   ['week8-interview-protocols', 'Week 8 · Interview protocols', 'hcim605', 68, 7],
   ['lecture12-policy-and-access', 'Lecture 12 · Policy and access', 'inst711', 58, 8],

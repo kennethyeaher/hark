@@ -91,7 +91,7 @@ describe('formatRecordingCount', () => {
 })
 
 describe('assertCourse', () => {
-  const course = { id: 'c1', code: 'INST 360', color: 'teal', recordingCount: 3 }
+  const course = { id: 'c1', code: 'INST 630', color: 'teal', recordingCount: 3 }
 
   it('accepts a complete course', () => {
     expect(() => assertCourse(course, 'test')).not.toThrow()

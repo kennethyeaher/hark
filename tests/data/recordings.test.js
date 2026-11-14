@@ -43,8 +43,8 @@ beforeEach(async () => {
     color: 'indigo',
   })
   await saveCourse({
-    id: 'inst360',
-    code: 'INST 360',
+    id: 'inst630',
+    code: 'INST 630',
     name: 'Programming Human-Centered Interfaces',
     color: 'teal',
   })
@@ -62,7 +62,7 @@ describe('saveRecording', () => {
   })
 
   it('fills an id and defaults for a new recording', async () => {
-    const saved = await saveRecording({ title: 'Lecture 1', courseId: 'inst360' })
+    const saved = await saveRecording({ title: 'Lecture 1', courseId: 'inst630' })
     expect(saved.id).toMatch(/^[0-9a-f-]{36}$/)
     expect(saved).toMatchObject({
       durationSeconds: 0,
@@ -162,7 +162,7 @@ describe('listing recordings', () => {
     await saveRecording(makeRecording({ id: 'week8', recordedAt: new Date(2026, 9, 21) }))
     await saveRecording(makeRecording({ id: 'week9', recordedAt: new Date(2026, 9, 28) }))
     await saveRecording(
-      makeRecording({ id: 'lecture17', courseId: 'inst360', recordedAt: new Date(2026, 9, 27) })
+      makeRecording({ id: 'lecture17', courseId: 'inst630', recordedAt: new Date(2026, 9, 27) })
     )
   })
 
@@ -179,7 +179,7 @@ describe('listing recordings', () => {
       'week9',
       'week8',
     ])
-    expect((await listRecordingsForCourse('inst360')).map((recording) => recording.id)).toEqual([
+    expect((await listRecordingsForCourse('inst630')).map((recording) => recording.id)).toEqual([
       'lecture17',
     ])
     expect(await listRecordingsForCourse('inst711')).toEqual([])
