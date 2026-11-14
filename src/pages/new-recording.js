@@ -89,6 +89,23 @@ function renderCourseChip(course) {
   return chip
 }
 
+/** how many characters at the end of a file name always stay visible */
+const fileNameTailLength = 12
+
+/**
+ * build a file name that shortens in the middle, so names that differ only at the end, such as
+ * `lecture-18-final-v1.m4a` and `lecture-18-final-v2.m4a`, can still be told apart.
+ * @param {string} name the file name
+ * @returns {HTMLElement} the start, which takes an ellipsis, and the end, which never shrinks
+ */
+export function renderFileName(name) {
+  const splitIndex = Math.max(0, name.length - fileNameTailLength)
+  return createElement('span', { className: 'file-chip-name', title: name }, [
+    createElement('span', { className: 'file-chip-name-start', text: name.slice(0, splitIndex) }),
+    createElement('span', { className: 'file-chip-name-end', text: name.slice(splitIndex) }),
+  ])
+}
+
 /**
  * check the code and name for a new course against the courses that exist.
  * @param {{ code: string, name: string }} fields the trimmed field values
@@ -370,11 +387,7 @@ export function renderNewRecordingSheet({
       dropContent.replaceChildren(
         createElement('span', { className: 'file-chip' }, [
           createIcon(fileIconPaths, { size: 18 }),
-          createElement('span', {
-            className: 'file-chip-name',
-            text: state.file.name,
-            title: state.file.name,
-          }),
+          renderFileName(state.file.name),
           createElement('span', {
             className: 'file-chip-details',
             text: state.fileError ? '' : details,

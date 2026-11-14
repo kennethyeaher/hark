@@ -167,7 +167,7 @@
   font-size: var(--text-14);
 }
 
-/* the picked file: the name shortens with an ellipsis, length and size always show */
+/* the picked file: the name shortens in the middle, length and size always show */
 .file-chip {
   display: inline-flex;
   align-items: center;
@@ -184,12 +184,22 @@
 }
 
 .file-chip-name {
+  display: flex;
   min-width: 0;
-  overflow: hidden;
   font-size: var(--text-15);
   font-weight: var(--weight-medium);
-  text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* the start takes the ellipsis and the end with the extension stays, so similar names differ */
+.file-chip-name-start {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-chip-name-end {
+  flex: none;
 }
 
 .file-chip-details {

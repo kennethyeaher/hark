@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   describeEstimate,
+  renderFileName,
   renderNewRecordingSheet,
   validateNewCourse,
 } from '../src/pages/new-recording.js'
@@ -100,6 +101,22 @@ describe('describeEstimate', () => {
     expect(describeEstimate({ durationSeconds: 10, modelKey: 'fast' })).toBe(
       'Fast takes less than a minute for this file on a laptop. Nothing is uploaded.'
     )
+  })
+})
+
+describe('renderFileName', () => {
+  it('keeps the last 12 characters apart so the end of the name always shows', () => {
+    const name = 'INST630_2026-11-12_lecture-18_final-v2.wav'
+    const element = renderFileName(name)
+    expect(element.querySelector('.file-chip-name-end').textContent).toBe('final-v2.wav')
+    expect(element.textContent).toBe(name)
+    expect(element.getAttribute('title')).toBe(name)
+  })
+
+  it('puts a short name entirely in the end', () => {
+    const element = renderFileName('a.mp3')
+    expect(element.querySelector('.file-chip-name-start').textContent).toBe('')
+    expect(element.querySelector('.file-chip-name-end').textContent).toBe('a.mp3')
   })
 })
 
