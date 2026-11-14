@@ -49,8 +49,22 @@ describe('findQuietCuts', () => {
 
   it('keeps every frame inside the audio near the end of the file', () => {
     // the last 0.2 seconds are silent, but a frame may not reach past the end
-    const cuts = findQuietCuts(makeAudio(301, [[300.8, 301]]), { sampleRate })
+    const cuts = findQuietCuts(makeAudio(301, [[300.8, 301]]), {
+      sampleRate,
+      shortestLastSeconds: 0,
+    })
     expect(cuts[0]).toBeCloseTo(300.7, 6)
+  })
+
+  it('skips a last cut that would leave a very short window', () => {
+    // a 300.2 second file would otherwise end in a window of about a quarter second
+    expect(findQuietCuts(makeAudio(300.2), { sampleRate })).toEqual([])
+    // the quiet gap pulls the cut late, leaving 6 seconds, so the tail joins the window before
+    expect(findQuietCuts(makeAudio(613, [[606, 607]]), { sampleRate })).toEqual([292])
+    // a tail of exactly 10 seconds is long enough to keep
+    expect(findQuietCuts(makeAudio(310), { sampleRate })).toEqual([292])
+    // constant audio cuts at 292, so a 301 second file would leave 9 seconds
+    expect(findQuietCuts(makeAudio(301), { sampleRate })).toEqual([])
   })
 
   it('returns no cuts for audio no longer than one window', () => {
@@ -66,6 +80,7 @@ describe('findQuietCuts', () => {
       searchSeconds: 2,
       frameSeconds: 0.2,
       stepSeconds: 0.5,
+      shortestLastSeconds: 2,
     })
     expect(cuts).toEqual([11.5, 18])
   })
@@ -78,6 +93,9 @@ describe('findQuietCuts', () => {
     )
     expect(() => findQuietCuts(makeAudio(1), { sampleRate, searchSeconds: -1 })).toThrow(
       /searchSeconds must be a finite number of 0 or more/
+    )
+    expect(() => findQuietCuts(makeAudio(1), { sampleRate, shortestLastSeconds: -1 })).toThrow(
+      /shortestLastSeconds must be a finite number of 0 or more/
     )
   })
 })

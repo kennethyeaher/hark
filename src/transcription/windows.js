@@ -55,19 +55,28 @@ function measureLoudness(samples, start, end) {
  * find where to cut long audio: near every multiple of the window length, at the quietest moment.
  * for each nominal cut it slides a frame in steps across plus or minus searchSeconds and picks the
  * center of the frame with the lowest RMS. on a tie the earliest frame wins. frames stay inside
- * the audio.
+ * the audio. a last cut that would leave less than shortestLastSeconds is skipped, so the end of
+ * the file joins the window before it instead of going to whisper as a clip it may invent text for.
  * @param {Float32Array} samples mono audio samples
  * @param {{ sampleRate: number, windowSeconds?: number, searchSeconds?: number,
- *   frameSeconds?: number, stepSeconds?: number }} options sample rate of the audio, window
- *   length, how far a cut may move each way, frame length, and step between frames, in seconds
+ *   frameSeconds?: number, stepSeconds?: number, shortestLastSeconds?: number }} options sample
+ *   rate of the audio, window length, how far a cut may move each way, frame length, step
+ *   between frames, and the shortest last window, in seconds
  * @returns {number[]} cut times in seconds, in order. empty when the audio is no longer than one
- *   window.
+ *   window plus shortestLastSeconds.
  * @throws {TypeError} when samples is not a Float32Array
  * @throws {RangeError} when an option is not a finite number in range
  */
 export function findQuietCuts(
   samples,
-  { sampleRate, windowSeconds = 300, searchSeconds = 8, frameSeconds = 0.5, stepSeconds = 0.1 } = {}
+  {
+    sampleRate,
+    windowSeconds = 300,
+    searchSeconds = 8,
+    frameSeconds = 0.5,
+    stepSeconds = 0.1,
+    shortestLastSeconds = 10,
+  } = {}
 ) {
   if (!(samples instanceof Float32Array)) {
     throw new TypeError(`samples must be a Float32Array, got ${String(samples)}`)
@@ -77,6 +86,7 @@ export function findQuietCuts(
   assertNotNegative(searchSeconds, 'searchSeconds')
   assertPositive(frameSeconds, 'frameSeconds')
   assertPositive(stepSeconds, 'stepSeconds')
+  assertNotNegative(shortestLastSeconds, 'shortestLastSeconds')
 
   // work in whole samples so candidate centers never drift with floating point steps
   const frameLength = Math.max(1, Math.round(frameSeconds * sampleRate))
@@ -84,6 +94,7 @@ export function findQuietCuts(
   const stepLength = Math.max(1, Math.round(stepSeconds * sampleRate))
   const stepCount = Math.floor((searchSeconds * sampleRate) / stepLength)
   const windowLength = Math.round(windowSeconds * sampleRate)
+  const shortestLastLength = Math.round(shortestLastSeconds * sampleRate)
 
   const cuts = []
   for (let nominal = windowLength; nominal < samples.length; nominal += windowLength) {
@@ -101,7 +112,10 @@ export function findQuietCuts(
       }
     }
     // audio too short for even one frame keeps the nominal cut
-    cuts.push((quietestCenter ?? nominal) / sampleRate)
+    const cut = quietestCenter ?? nominal
+    // cuts sit a window apart, so only the last one can leave a short tail
+    if (samples.length - cut < shortestLastLength) break
+    cuts.push(cut / sampleRate)
   }
   return cuts
 }
