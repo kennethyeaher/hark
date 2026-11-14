@@ -57,7 +57,7 @@ function describeFile(file) {
 
 /**
  * read an audio file and resample it to 16 kHz mono for whisper.
- * the browser decodes the file at its own rate, the channels are mixed with `mixToMono`, and an
+ * the browser decodes the file at its default rate, the channels are mixed with `mixToMono`, and an
  * OfflineAudioContext resamples the result.
  * @param {Blob} file the uploaded File
  * @returns {Promise<{ samples: Float32Array, durationSeconds: number }>} mono samples at 16 kHz
@@ -71,7 +71,8 @@ export async function decodeAudioFile(file) {
   }
   const bytes = await file.arrayBuffer()
 
-  // decode at the file's own rate. the context is only used for decoding, so close it after.
+  // decode to the context's rate, usually 44.1 or 48 kHz. the context is only used for decoding,
+  // so close it after.
   const context = new AudioContext()
   let decoded
   try {

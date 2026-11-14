@@ -30,7 +30,8 @@ export function estimateSeconds({ durationSeconds, modelKey }) {
 /**
  * estimate the seconds left in a running transcription. before any audio is processed this is
  * the fixed rule for the whole file. after that it is the audio still to go times the speed
- * measured so far, so it follows the real device instead of the guess.
+ * measured so far, so it follows the real device instead of the guess. elapsedSeconds should
+ * count transcription time only, from the ready message, or model download time inflates it.
  * @param {{ durationSeconds: number, processedSeconds: number, elapsedSeconds: number,
  *   modelKey: string }} options audio length, audio done so far, time spent, and model choice
  * @returns {number} estimated seconds left, never below 0
