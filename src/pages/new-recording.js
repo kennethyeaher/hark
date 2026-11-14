@@ -598,8 +598,16 @@ export function renderNewRecordingSheet({
       await actions.saveAudio({ recordingId: recording.id, blob: file })
       await actions.enqueueRecording(recording.id)
     } catch (error) {
-      if (recording) await actions.deleteRecordingForever(recording.id)
-      startError.textContent = `The recording could not be saved: ${error.message}`
+      let message = `The recording could not be saved: ${error.message}`
+      // the cleanup can fail too, and the sheet must still come back with both reasons
+      if (recording) {
+        try {
+          await actions.deleteRecordingForever(recording.id)
+        } catch (cleanupError) {
+          message += ` The partial recording could not be removed either: ${cleanupError.message}`
+        }
+      }
+      startError.textContent = message
       state.isStarting = false
       update()
       return

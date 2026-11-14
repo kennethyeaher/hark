@@ -287,6 +287,22 @@ describe('renderNewRecordingSheet', () => {
     expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
   })
 
+  it('comes back with both reasons when the cleanup delete fails too', async () => {
+    actions.enqueueRecording.mockRejectedValueOnce(new Error('queue is closed'))
+    actions.deleteRecordingForever.mockRejectedValueOnce(new Error('storage is blocked'))
+    const sheet = renderSheet()
+    await pickFile(sheet, makeFile())
+    sheet.querySelector('.sheet-start').click()
+    await vi.waitFor(() =>
+      expect(sheet.textContent).toContain(
+        'The recording could not be saved: queue is closed The partial recording could not be removed either: storage is blocked'
+      )
+    )
+    expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
+    sheet.querySelector('.sheet-close').click()
+    expect(onDismiss).toHaveBeenCalled()
+  })
+
   it('calls onDismiss from Close, Cancel, Escape, and the backdrop', () => {
     const sheet = renderSheet()
     sheet.querySelector('.sheet-close').click()
