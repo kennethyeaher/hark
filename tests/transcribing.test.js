@@ -269,6 +269,16 @@ describe('renderTranscribing in other states', () => {
     )
   })
 
+  it('says no speech was found when the transcript is empty', async () => {
+    const { page } = renderCard({
+      recording: { ...baseRecording, status: 'transcribed' },
+      countSegments: async () => 0,
+    })
+    await vi.waitFor(() =>
+      expect(page.querySelector('.transcribe-count').textContent).toBe('no speech found')
+    )
+  })
+
   it('uses the live segment count when the job just finished', () => {
     const countSegments = vi.fn()
     const { page } = renderCard({

@@ -428,7 +428,9 @@ export function renderTranscribing(
      * @returns {void}
      */
     const showCount = (total) => {
-      count.textContent = `${total} ${total === 1 ? 'segment' : 'segments'}`
+      // a silent file finishes with nothing in it, which reads better in words than as zero
+      if (total === 0) count.textContent = 'no speech found'
+      else count.textContent = `${total} ${total === 1 ? 'segment' : 'segments'}`
     }
     if (jobState?.phase === 'done') showCount(jobState.segmentCount)
     else countSegments(id).then(showCount, () => count.remove())
