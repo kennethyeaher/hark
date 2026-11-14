@@ -296,7 +296,10 @@
   vertical-align: 1px;
 }
 
-/* status: green check for summarized, a blue bar and percent while transcribing */
+/*
+  status: gray for queued and transcribed, green check for summarized, red alert for
+  failed, and a blue bar with the percent while transcribing
+*/
 .recording-status {
   display: inline-flex;
   align-items: center;
@@ -304,8 +307,17 @@
   font-size: var(--text-14);
 }
 
+.recording-status-queued,
+.recording-status-transcribed {
+  color: var(--color-secondary-label);
+}
+
 .recording-status-done {
   color: var(--color-green-text);
+}
+
+.recording-status-failed {
+  color: var(--color-red-text);
 }
 
 .recording-status-working {

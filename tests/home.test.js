@@ -172,7 +172,7 @@ describe('recording table', () => {
   })
 
   it('rejects an unknown status and progress outside 0 to 1', () => {
-    expect(() => renderRecordingStatus({ title: 'x', status: 'queued' })).toThrow(/unknown/)
+    expect(() => renderRecordingStatus({ title: 'x', status: 'archived' })).toThrow(/unknown/)
     expect(() =>
       renderRecordingStatus({ title: 'x', status: 'transcribing', progress: 1.5 })
     ).toThrow(/0 to 1/)

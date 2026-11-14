@@ -107,6 +107,21 @@ describe('renderSidebar', () => {
     expect(sidebar.querySelector('.sidebar-storage-detail').textContent).toBe('1 recording')
   })
 
+  it('shows the Courses label when there are courses', () => {
+    const sidebar = build('home')
+    const label = sidebar.querySelector('#sidebar-courses-heading')
+    expect(label.textContent).toBe('Courses')
+    expect(sidebar.querySelector('[aria-labelledby="sidebar-courses-heading"]')).not.toBeNull()
+  })
+
+  it('leaves out the Courses label and list when there are no courses', () => {
+    const sidebar = renderSidebar({ courses: [], activeRoute: { name: 'home', params: {} } })
+    expect(sidebar.querySelector('#sidebar-courses-heading')).toBeNull()
+    expect(sidebar.querySelector('[aria-labelledby="sidebar-courses-heading"]')).toBeNull()
+    expect(sidebar.textContent).not.toContain('Courses')
+    expect(sidebar.querySelector('nav a[href="#/settings"]')).not.toBeNull()
+  })
+
   it('throws specific errors on bad courses', () => {
     const route = { name: 'home', params: {}, query: {} }
     expect(() => renderSidebar({ courses: null, activeRoute: route })).toThrow(/array/)

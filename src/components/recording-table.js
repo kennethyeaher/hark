@@ -5,6 +5,24 @@ import { formatDuration, formatRelativeDate } from '../lib/format.js'
 import { renderRecordingIcon } from './recording-card.js'
 
 const checkIconPaths = ['M5 12.5l4.5 4.5L19 7.5']
+const alertIconPaths = ['M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0 -18z', 'M12 8v4.5', 'M12 16h.01']
+
+// every status that renders as a word, with its icon when it has one. transcribing is a bar.
+// the word is always shown, so no status depends on color alone.
+const textStatuses = {
+  queued: { label: 'Queued', className: 'recording-status-queued', iconPaths: null },
+  transcribed: {
+    label: 'Transcribed',
+    className: 'recording-status-transcribed',
+    iconPaths: checkIconPaths,
+  },
+  summarized: {
+    label: 'Summarized',
+    className: 'recording-status-done',
+    iconPaths: checkIconPaths,
+  },
+  failed: { label: 'Failed', className: 'recording-status-failed', iconPaths: alertIconPaths },
+}
 
 // column headings in order, with the class that sets each width
 const columns = [
@@ -16,16 +34,17 @@ const columns = [
 ]
 
 /**
- * build the status cell content: a check and Summarized, or a progress bar.
+ * build the status cell content: a word with an optional icon, or a progress bar.
  * @param {{ title: string, status: string, progress?: number }} recording recording data
  * @returns {HTMLElement} the status content
  * @throws {RangeError} when the status is unknown or progress is outside 0 to 1
  */
 export function renderRecordingStatus(recording) {
-  if (recording.status === 'summarized') {
-    return createElement('span', { className: 'recording-status recording-status-done' }, [
-      createIcon(checkIconPaths, { size: 16 }),
-      'Summarized',
+  if (Object.hasOwn(textStatuses, recording.status)) {
+    const { label, className, iconPaths } = textStatuses[recording.status]
+    return createElement('span', { className: `recording-status ${className}` }, [
+      iconPaths && createIcon(iconPaths, { size: 16 }),
+      label,
     ])
   }
   if (recording.status !== 'transcribing') {
