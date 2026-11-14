@@ -57,8 +57,8 @@ function describeFile(file) {
 
 /**
  * read an audio file and resample it to 16 kHz mono for whisper.
- * the browser decodes the file at its default rate, the channels are mixed with `mixToMono`, and an
- * OfflineAudioContext resamples the result.
+ * the browser decodes the file at its default rate, the channels are mixed with `mixToMono`,
+ * and an OfflineAudioContext resamples the result.
  * @param {Blob} file the uploaded File
  * @returns {Promise<{ samples: Float32Array, durationSeconds: number }>} mono samples at 16 kHz
  *   and the length of the audio

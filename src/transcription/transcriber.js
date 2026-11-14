@@ -97,19 +97,21 @@ export function createTranscriber({ loadPipeline, post }) {
       const windowSamples = samples.subarray(start, start + windowLength)
       const output = await pipeline(windowSamples, transcribeOptions)
       const offsetSeconds = start / whisperSampleRate
-      windows.push(
-        buildSegments(output.chunks ?? [], {
-          offsetSeconds,
-          durationSeconds: windowSamples.length / whisperSampleRate,
-        })
-      )
-      // the new window's segments, numbered within the whole transcript
-      const merged = mergeSegments(windows)
+      const windowSegments = buildSegments(output.chunks ?? [], {
+        offsetSeconds,
+        durationSeconds: windowSamples.length / whisperSampleRate,
+      })
+      // number the new segments after every segment from earlier windows
+      const segmentsBefore = windows.flat().length
+      windows.push(windowSegments)
       post({
         type: 'chunk',
         jobId,
         processedSeconds: offsetSeconds + windowSamples.length / whisperSampleRate,
-        segments: merged.slice(merged.length - windows.at(-1).length),
+        segments: windowSegments.map((segment, index) => ({
+          ...segment,
+          index: segmentsBefore + index,
+        })),
       })
     }
     post({ type: 'done', jobId, segments: mergeSegments(windows) })
