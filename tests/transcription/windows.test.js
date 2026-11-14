@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import {
   dropRepeatedSegments,
   findQuietCuts,
-  keepOwnedSegments,
   planWindows,
 } from '../../src/transcription/windows.js'
 
@@ -84,36 +83,17 @@ describe('findQuietCuts', () => {
 })
 
 describe('planWindows', () => {
-  it('adds context on each side of the owned range and clamps it to the file', () => {
+  it('runs each window from one cut to the next', () => {
     expect(planWindows(660, [292, 592])).toEqual([
-      { ownedStart: 0, ownedEnd: 292, audioStart: 0, audioEnd: 297, isLast: false },
-      { ownedStart: 292, ownedEnd: 592, audioStart: 287, audioEnd: 597, isLast: false },
-      { ownedStart: 592, ownedEnd: 660, audioStart: 587, audioEnd: 660, isLast: true },
+      { startSeconds: 0, endSeconds: 292 },
+      { startSeconds: 292, endSeconds: 592 },
+      { startSeconds: 592, endSeconds: 660 },
     ])
-  })
-
-  it('clamps context that would reach past a short last window', () => {
-    expect(planWindows(302, [300], { contextSeconds: 5 })[1]).toEqual({
-      ownedStart: 300,
-      ownedEnd: 302,
-      audioStart: 295,
-      audioEnd: 302,
-      isLast: true,
-    })
   })
 
   it('gives one window for audio with no cuts and none for empty audio', () => {
-    expect(planWindows(20, [])).toEqual([
-      { ownedStart: 0, ownedEnd: 20, audioStart: 0, audioEnd: 20, isLast: true },
-    ])
+    expect(planWindows(20, [])).toEqual([{ startSeconds: 0, endSeconds: 20 }])
     expect(planWindows(0, [])).toEqual([])
-  })
-
-  it('follows the context option', () => {
-    expect(planWindows(600, [300], { contextSeconds: 0 })[1]).toMatchObject({
-      audioStart: 300,
-      audioEnd: 600,
-    })
   })
 
   it('rejects cuts out of order or outside the audio', () => {
@@ -124,53 +104,6 @@ describe('planWindows', () => {
     expect(() => planWindows(600, [0])).toThrow('cut 0 must be after 0 and before 600, got 0')
     expect(() => planWindows(600, 'x')).toThrow(/cuts must be an array/)
     expect(() => planWindows(-1, [])).toThrow(/durationSeconds/)
-  })
-})
-
-describe('keepOwnedSegments', () => {
-  const window = { ownedStart: 300, ownedEnd: 600 }
-
-  /**
-   * make a segment with the given times.
-   * @param {number} startSeconds start
-   * @param {number} endSeconds end
-   * @returns {{ index: number, startSeconds: number, endSeconds: number, text: string }} segment
-   */
-  function makeSegment(startSeconds, endSeconds) {
-    return { index: 0, startSeconds, endSeconds, text: `${startSeconds}` }
-  }
-
-  it('keeps a midpoint at the owned start and drops one at the owned end', () => {
-    const segments = [
-      makeSegment(295, 299.9),
-      makeSegment(298, 302),
-      makeSegment(450, 460),
-      makeSegment(598, 602),
-      makeSegment(599, 605),
-    ]
-    expect(keepOwnedSegments(segments, window).map((segment) => segment.text)).toEqual([
-      '298',
-      '450',
-    ])
-  })
-
-  it('keeps a midpoint on the end of the file in the last window', () => {
-    const segments = [makeSegment(600, 600)]
-    expect(keepOwnedSegments(segments, window)).toEqual([])
-    expect(keepOwnedSegments(segments, { ...window, isLast: true })).toEqual(segments)
-  })
-
-  it('returns the same segment objects without changing them', () => {
-    const segment = makeSegment(400, 410)
-    expect(keepOwnedSegments([segment], window)[0]).toBe(segment)
-  })
-
-  it('rejects bad input', () => {
-    expect(() => keepOwnedSegments(null, window)).toThrow(/segments must be an array/)
-    expect(() => keepOwnedSegments([], { ownedStart: 10, ownedEnd: 5 })).toThrow(
-      /must not come before/
-    )
-    expect(() => keepOwnedSegments([], {})).toThrow(/ownedStart/)
   })
 })
 

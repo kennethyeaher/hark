@@ -2,10 +2,10 @@
   plans the windows a long file is transcribed in.
 
   whisper damages speech when a window ends in the middle of a word: it drops words, invents a
-  sentence, or repeats one. so each cut moves to the quietest moment near its nominal place, and
-  the audio sent for a window carries a few seconds of context past both edges. every window
-  owns only the time between its cuts, and a segment belongs to the window that owns its
-  midpoint, so the context never shows up twice in the transcript.
+  sentence, or repeats one. so each cut moves to the quietest moment near its nominal place.
+  windows do not overlap. a test in 04c gave each window 5 seconds of context past its edges
+  and kept segments by midpoint, but whisper then ran sentences across the cut and the text
+  between the cut and the context edge landed in neither window.
 */
 
 /**
@@ -107,20 +107,17 @@ export function findQuietCuts(
 }
 
 /**
- * plan the windows between cuts: the time each window owns, and the audio sent for it, which
- * reaches contextSeconds past each owned edge, clamped to the file.
+ * plan the windows between cuts, each running from one cut to the next.
  * @param {number} durationSeconds length of the audio
  * @param {number[]} cuts cut times in seconds, increasing, each inside the audio
- * @param {{ contextSeconds?: number }} [options] extra audio on each side of a window
- * @returns {Array<{ ownedStart: number, ownedEnd: number, audioStart: number, audioEnd: number,
- *   isLast: boolean }>} one window per stretch between cuts, in order. empty for empty audio.
+ * @returns {Array<{ startSeconds: number, endSeconds: number }>} one window per stretch between
+ *   cuts, in order. empty for empty audio.
  * @throws {TypeError} when cuts is not an array
- * @throws {RangeError} when the duration or context is not a number of 0 or more, or a cut is
- *   out of order or outside the audio
+ * @throws {RangeError} when the duration is not a number of 0 or more, or a cut is out of order
+ *   or outside the audio
  */
-export function planWindows(durationSeconds, cuts, { contextSeconds = 5 } = {}) {
+export function planWindows(durationSeconds, cuts) {
   assertNotNegative(durationSeconds, 'durationSeconds')
-  assertNotNegative(contextSeconds, 'contextSeconds')
   if (!Array.isArray(cuts)) {
     throw new TypeError(`cuts must be an array, got ${String(cuts)}`)
   }
@@ -138,41 +135,10 @@ export function planWindows(durationSeconds, cuts, { contextSeconds = 5 } = {}) 
     }
   }
 
-  return edges.slice(0, -1).map((ownedStart, position) => {
-    const ownedEnd = edges[position + 1]
-    return {
-      ownedStart,
-      ownedEnd,
-      audioStart: Math.max(0, ownedStart - contextSeconds),
-      audioEnd: Math.min(durationSeconds, ownedEnd + contextSeconds),
-      isLast: position === edges.length - 2,
-    }
-  })
-}
-
-/**
- * keep the segments a window owns: those whose midpoint is at or after ownedStart and before
- * ownedEnd. the last window also keeps a midpoint that lands exactly on the end of the file.
- * @param {Array<{ startSeconds: number, endSeconds: number }>} segments segments with file times
- * @param {{ ownedStart: number, ownedEnd: number, isLast?: boolean }} window owned range
- * @returns {Array<object>} the owned segments, in their original order and unchanged
- * @throws {TypeError} when segments is not an array
- * @throws {RangeError} when the owned range is not two numbers in order
- */
-export function keepOwnedSegments(segments, { ownedStart, ownedEnd, isLast = false } = {}) {
-  if (!Array.isArray(segments)) {
-    throw new TypeError(`segments must be an array, got ${String(segments)}`)
-  }
-  assertNotNegative(ownedStart, 'ownedStart')
-  assertNotNegative(ownedEnd, 'ownedEnd')
-  if (ownedEnd < ownedStart) {
-    throw new RangeError(`ownedEnd ${ownedEnd} must not come before ownedStart ${ownedStart}`)
-  }
-  return segments.filter((segment) => {
-    const midpoint = (segment.startSeconds + segment.endSeconds) / 2
-    if (midpoint < ownedStart) return false
-    return isLast ? midpoint <= ownedEnd : midpoint < ownedEnd
-  })
+  return edges.slice(0, -1).map((startSeconds, position) => ({
+    startSeconds,
+    endSeconds: edges[position + 1],
+  }))
 }
 
 // a repeat shorter than this many words, like "Yes. Yes.", is ordinary speech and stays

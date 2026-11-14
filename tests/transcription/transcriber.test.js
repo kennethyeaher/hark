@@ -108,7 +108,7 @@ describe('createTranscriber', () => {
     })
   })
 
-  it('plans windows with context, offsets their times, and posts the transcript after each', async () => {
+  it('cuts windows at quiet points, offsets their times, and posts the transcript after each', async () => {
     const { transcriber, posted, fakePipeline } = setup()
     // silence is quiet everywhere, so each cut lands on the first frame of its search, 8 s early
     const seconds = windowSeconds * 2 + 60
@@ -118,53 +118,20 @@ describe('createTranscriber', () => {
       samples: silence(seconds),
       modelKey: 'balanced',
     })
-    // audio ranges 0 to 297, 287 to 597, and 587 to 660
+    // windows 0 to 292, 292 to 592, and 592 to 660, with no overlap
     expect(fakePipeline.mock.calls.map(([samples]) => samples.length / whisperSampleRate)).toEqual([
-      297, 310, 73,
+      292, 300, 68,
     ])
     const chunks = posted.filter((message) => message.type === 'chunk')
     expect(chunks.map((chunk) => chunk.processedSeconds)).toEqual([292, 592, 660])
     // each chunk carries the whole transcript so far
     expect(chunks.map((chunk) => chunk.segments.length)).toEqual([2, 4, 6])
     expect(chunks[1].segments.map((segment) => segment.index)).toEqual([0, 1, 2, 3])
-    expect(chunks[1].segments[2].startSeconds).toBe(287)
     const done = posted.at(-1)
     expect(done.segments.map((segment) => segment.startSeconds)).toEqual([
-      0, 148.5, 287, 442, 587, 623.5,
+      0, 146, 292, 442, 592, 626,
     ])
     expect(done.segments.at(-1).endSeconds).toBe(660)
-  })
-
-  it('keeps only the segments each window owns at its edges', async () => {
-    const { transcriber, posted, fakePipeline } = setup()
-    // a short segment at each end of every window's audio, so the context parts are easy to see
-    fakePipeline.mockImplementation(async (samples) => {
-      const seconds = samples.length / whisperSampleRate
-      return {
-        chunks: [
-          { timestamp: [0, 3], text: ' Head.' },
-          { timestamp: [3, seconds - 3], text: ' Body.' },
-          { timestamp: [seconds - 3, null], text: ' Tail.' },
-        ],
-      }
-    })
-    await transcriber.handleMessage({
-      type: 'transcribe',
-      jobId: 'job',
-      samples: silence(windowSeconds * 2 + 60),
-      modelKey: 'balanced',
-    })
-    const done = posted.at(-1)
-    // the first head and the last tail are real edges of the file, every other one is context
-    expect(done.segments.map((segment) => segment.text)).toEqual([
-      'Head.',
-      'Body.',
-      'Body.',
-      'Body.',
-      'Tail.',
-    ])
-    expect(done.segments.map((segment) => segment.index)).toEqual([0, 1, 2, 3, 4])
-    expect(done.segments.at(-1)).toMatchObject({ startSeconds: 657, endSeconds: 660 })
   })
 
   it('drops a sentence whisper repeats across a window edge', async () => {
@@ -190,8 +157,8 @@ describe('createTranscriber', () => {
     const chunks = posted.filter((message) => message.type === 'chunk')
     expect(chunks.map((chunk) => chunk.segments.length)).toEqual([1, 1, 2])
     expect(posted.at(-1).segments).toEqual([
-      { index: 0, startSeconds: 0, endSeconds: 297, text: sentences[0] },
-      { index: 1, startSeconds: 587, endSeconds: 660, text: sentences[2] },
+      { index: 0, startSeconds: 0, endSeconds: 292, text: sentences[0] },
+      { index: 1, startSeconds: 592, endSeconds: 660, text: sentences[2] },
     ])
   })
 
