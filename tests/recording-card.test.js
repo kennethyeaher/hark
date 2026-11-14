@@ -30,6 +30,12 @@ describe('renderRecordingCard', () => {
     expect(card.querySelector('h3').textContent).toBe('Week 9 · Thematic analysis')
   })
 
+  it('shows under 1 min for a clip shorter than a minute', () => {
+    const clip = { ...recording, durationSeconds: 4 }
+    const card = renderRecordingCard({ recording: clip, course, now })
+    expect(card.querySelector('.recording-card-duration').textContent).toBe('under 1 min')
+  })
+
   it('shows the course code in course mode with the duration', () => {
     const meta = renderRecordingCard({ recording, course, now }).querySelector(
       '.recording-card-meta'

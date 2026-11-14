@@ -216,6 +216,13 @@ describe('renderNewRecordingSheet', () => {
     expect(sheet.querySelector('.sheet-start').disabled).toBe(false)
   })
 
+  it('shows under 1 min for a short clip in the file chip', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(4)
+    const sheet = renderSheet()
+    await pickFile(sheet, makeFile('clip.m4a'))
+    expect(sheet.querySelector('.file-chip').textContent).toContain('under 1 min · 1 KB')
+  })
+
   it('updates the estimate when the model changes', async () => {
     const sheet = renderSheet()
     await pickFile(sheet, makeFile())
