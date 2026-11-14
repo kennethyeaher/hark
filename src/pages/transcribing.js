@@ -443,6 +443,7 @@ export function renderTranscribing(
       else count.textContent = `${total} ${total === 1 ? 'segment' : 'segments'}`
     }
     if (jobState?.phase === 'done') showCount(jobState.segmentCount)
+    // the count is a detail, so a failed read drops it and the saved message still stands
     else countSegments(id).then(showCount, () => count.remove())
     return [
       createElement('div', { className: 'transcribe-waveform' }, [
