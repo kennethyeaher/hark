@@ -482,7 +482,7 @@ export function renderTranscribing(
       }),
       createElement('p', { className: 'transcribe-message transcribe-message-failed' }, [
         createIcon(alertIconPaths, { size: 18 }),
-        message,
+        createElement('span', { className: 'transcribe-message-text', text: message }),
       ]),
       createElement('div', { className: 'transcribe-actions' }, [removeButton]),
     ]

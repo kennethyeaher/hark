@@ -456,7 +456,20 @@
 }
 
 .transcribe-message-failed {
+  flex-wrap: nowrap;
+  align-items: flex-start;
   color: var(--color-red-text);
+  text-align: left;
+}
+
+/* a long error wraps beside its icon instead of pushing the icon onto a line of its own */
+.transcribe-message-failed .icon {
+  margin-top: 1px;
+}
+
+.transcribe-message-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .transcribe-count {
