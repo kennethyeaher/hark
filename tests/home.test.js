@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
 import { renderHome } from '../src/pages/home.js'
-import { renderRecordingTable, renderRecordingStatus } from '../src/components/recording-table.js'
+import { renderRecordingTable } from '../src/components/recording-table.js'
+import { renderRecordingStatus } from '../src/components/recording-status.js'
 import { buildSampleView } from './sample-library.js'
 
 // a fixed afternoon so every sample date lands on a known label
@@ -66,13 +67,13 @@ describe('renderHome in grid view', () => {
     expect(textsOf(table, 'tbody tr:nth-child(4) td')[2]).toBe('Oct 21')
   })
 
-  it('shows the transcribing recording as a progress bar at 64 percent', () => {
-    const bar = page.querySelector('[role="progressbar"]')
-    expect(bar.getAttribute('aria-valuenow')).toBe('64')
-    expect(bar.getAttribute('aria-valuemin')).toBe('0')
-    expect(bar.getAttribute('aria-valuemax')).toBe('100')
-    expect(bar.getAttribute('aria-label')).toBe('Transcribing Lecture 17 · Client-side ML')
-    expect(bar.parentElement.textContent).toBe('64%')
+  it('shows the transcribed sample as a status with no progress bar', () => {
+    const table = page.querySelector('.home-section:last-child table')
+    expect(table.querySelector('[role="progressbar"]')).toBeNull()
+    const row = [...table.querySelectorAll('tbody tr')].find((tableRow) =>
+      tableRow.textContent.includes('Lecture 17 · Client-side ML')
+    )
+    expect(row.lastElementChild.textContent).toBe('Transcribed')
   })
 })
 
@@ -172,7 +173,7 @@ describe('recording table', () => {
   })
 
   it('rejects an unknown status and progress outside 0 to 1', () => {
-    expect(() => renderRecordingStatus({ title: 'x', status: 'queued' })).toThrow(/unknown/)
+    expect(() => renderRecordingStatus({ title: 'x', status: 'archived' })).toThrow(/unknown/)
     expect(() =>
       renderRecordingStatus({ title: 'x', status: 'transcribing', progress: 1.5 })
     ).toThrow(/0 to 1/)

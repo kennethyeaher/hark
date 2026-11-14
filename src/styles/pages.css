@@ -108,6 +108,32 @@
   background: color-mix(in srgb, var(--color-blue) 88%, #000000);
 }
 
+/* quieter buttons and sizes shared by the sheet and the transcribing card */
+.button-plain {
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+}
+
+.button-plain:hover {
+  background: var(--color-grouped);
+}
+
+.button-small {
+  height: 34px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-14);
+}
+
+.button.button-primary {
+  border: 0;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 /* filter chips on the left, sort on the right */
 .course-toolbar {
   display: flex;
@@ -206,4 +232,304 @@
 
 .empty-state-status.is-error {
   color: var(--color-red-text);
+}
+
+/*
+  transcribing card: one centered card for a recording on its way to a transcript.
+  every state names itself in words and icons, so none depends on color alone.
+*/
+.page-transcribe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: clamp(var(--space-4), 8vh, 96px);
+}
+
+.transcribe-card {
+  display: flex;
+  flex-direction: column;
+  width: min(600px, 100%);
+  padding: var(--space-7);
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 2px 12px rgb(0 0 0 / 6%);
+}
+
+.transcribe-waveform {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-5);
+}
+
+.transcribe-eyebrow {
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.transcribe-eyebrow-working {
+  color: var(--color-blue);
+}
+
+.transcribe-eyebrow-quiet {
+  color: var(--color-secondary-label);
+}
+
+.transcribe-eyebrow-done {
+  color: var(--color-green-text);
+}
+
+.transcribe-eyebrow-failed {
+  color: var(--color-red-text);
+}
+
+.transcribe-title {
+  margin-top: var(--space-1);
+  /* titles come from file names, which can have no spaces at all */
+  overflow-wrap: anywhere;
+  font-size: var(--text-22);
+  font-weight: var(--weight-semibold);
+  text-align: center;
+}
+
+.transcribe-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0 4px;
+  margin-top: var(--space-1);
+  color: var(--color-secondary-label);
+  font-size: var(--text-14);
+}
+
+.transcribe-meta-code {
+  overflow-wrap: anywhere;
+}
+
+.transcribe-dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-right: 2px;
+  border-radius: 50%;
+}
+
+.transcribe-bar {
+  height: 6px;
+  margin-top: var(--space-6);
+  overflow: hidden;
+  background: var(--color-fill);
+  border-radius: 3px;
+}
+
+.transcribe-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--color-blue);
+  border-radius: 3px;
+}
+
+.transcribe-progress-text {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-14);
+}
+
+.transcribe-time-left {
+  color: var(--color-secondary-label);
+}
+
+/* pipeline steps: a check when done, a ring with a dot while running, an empty ring after */
+.transcribe-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-5) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-15);
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.step-pending {
+  color: var(--color-secondary-label);
+}
+
+.step-icon {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.step-icon-done {
+  color: var(--color-on-blue);
+  background: var(--color-green);
+}
+
+.step-icon-current {
+  border: 2px solid var(--color-blue);
+}
+
+.step-icon-current::after {
+  width: 8px;
+  height: 8px;
+  content: '';
+  background: var(--color-blue);
+  border-radius: 50%;
+}
+
+.step-icon-pending {
+  border: 1.5px solid var(--color-secondary-label);
+}
+
+/* live box with the newest lines of the transcript */
+.transcribe-live {
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  background: var(--color-grouped);
+  border-radius: var(--radius-card);
+}
+
+.transcribe-live-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.transcribe-live-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--color-green);
+  border-radius: 50%;
+}
+
+.transcribe-live-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+  font-size: var(--text-14);
+  line-height: var(--leading-normal);
+}
+
+.transcribe-live-older,
+.transcribe-live-empty {
+  color: var(--color-secondary-label);
+}
+
+.transcribe-message {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+  font-size: var(--text-15);
+  text-align: center;
+}
+
+.transcribe-message .icon {
+  flex: none;
+}
+
+.transcribe-message-done .icon {
+  color: var(--color-green-text);
+}
+
+.transcribe-message-failed {
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  color: var(--color-red-text);
+  text-align: left;
+}
+
+/* a long error wraps beside its icon instead of pushing the icon onto a line of its own */
+.transcribe-message-failed .icon {
+  margin-top: 1px;
+}
+
+.transcribe-message-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.transcribe-count {
+  color: var(--color-secondary-label);
+}
+
+.transcribe-count::before {
+  content: '· ';
+}
+
+.transcribe-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.transcribe-confirm {
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+.transcribe-confirm-question {
+  font-size: var(--text-15);
+  font-weight: var(--weight-medium);
+}
+
+.transcribe-confirm .transcribe-actions {
+  margin-top: var(--space-3);
+}
+
+.button-outline {
+  color: var(--color-label);
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+}
+
+.button-outline:hover {
+  background: var(--color-grouped);
+}
+
+.button.button-danger {
+  color: var(--color-red-text);
+}
+
+.transcribe-footnote {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-4);
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+  text-align: center;
+}
+
+.transcribe-footnote .icon {
+  flex: none;
 }

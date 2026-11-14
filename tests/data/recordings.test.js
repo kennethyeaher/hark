@@ -9,9 +9,12 @@ import {
   restoreRecording,
   saveRecording,
   trashRecording,
+  updateRecordingStatus,
 } from '../../src/data/recordings.js'
 import { getNote, saveNote } from '../../src/data/notes.js'
 import { listMomentsForRecording, saveMoment } from '../../src/data/moments.js'
+import { getAudio, saveAudio } from '../../src/data/audio.js'
+import { listSegmentsForRecording, saveSegments } from '../../src/data/segments.js'
 
 /**
  * build a valid recording with fields that a test can override.
@@ -30,6 +33,8 @@ function makeRecording(overrides = {}) {
     progress: 1,
     isStarred: true,
     deletedAt: null,
+    model: 'balanced',
+    errorMessage: null,
     ...overrides,
   }
 }
@@ -43,8 +48,8 @@ beforeEach(async () => {
     color: 'indigo',
   })
   await saveCourse({
-    id: 'inst360',
-    code: 'INST 360',
+    id: 'inst630',
+    code: 'INST 630',
     name: 'Programming Human-Centered Interfaces',
     color: 'teal',
   })
@@ -62,7 +67,7 @@ describe('saveRecording', () => {
   })
 
   it('fills an id and defaults for a new recording', async () => {
-    const saved = await saveRecording({ title: 'Lecture 1', courseId: 'inst360' })
+    const saved = await saveRecording({ title: 'Lecture 1', courseId: 'inst630' })
     expect(saved.id).toMatch(/^[0-9a-f-]{36}$/)
     expect(saved).toMatchObject({
       durationSeconds: 0,
@@ -70,9 +75,22 @@ describe('saveRecording', () => {
       progress: 0,
       isStarred: false,
       deletedAt: null,
+      model: 'balanced',
+      errorMessage: null,
     })
     expect(saved.createdAt).toBeInstanceOf(Date)
     expect(await getRecording(saved.id)).toEqual(saved)
+  })
+
+  it('keeps a model choice and an error message', async () => {
+    await saveRecording(
+      makeRecording({ model: 'fast', status: 'failed', errorMessage: 'decoding failed' })
+    )
+    expect(await getRecording('week9')).toMatchObject({
+      model: 'fast',
+      status: 'failed',
+      errorMessage: 'decoding failed',
+    })
   })
 
   it('drops fields the store does not keep', async () => {
@@ -106,6 +124,18 @@ describe('recording validation', () => {
       /progress must be a number from 0 to 1, got 1.2/,
     ],
     ['progress below 0', { progress: -0.1 }, RangeError, /progress must be a number from 0 to 1/],
+    [
+      'an unknown model',
+      { model: 'huge' },
+      TypeError,
+      /model must be one of fast, balanced, accurate, got huge/,
+    ],
+    [
+      'an errorMessage that is not a string',
+      { errorMessage: 42 },
+      TypeError,
+      /errorMessage must be a string or null, got 42/,
+    ],
     [
       'progress that is NaN',
       { progress: Number.NaN },
@@ -162,7 +192,7 @@ describe('listing recordings', () => {
     await saveRecording(makeRecording({ id: 'week8', recordedAt: new Date(2026, 9, 21) }))
     await saveRecording(makeRecording({ id: 'week9', recordedAt: new Date(2026, 9, 28) }))
     await saveRecording(
-      makeRecording({ id: 'lecture17', courseId: 'inst360', recordedAt: new Date(2026, 9, 27) })
+      makeRecording({ id: 'lecture17', courseId: 'inst630', recordedAt: new Date(2026, 9, 27) })
     )
   })
 
@@ -179,7 +209,7 @@ describe('listing recordings', () => {
       'week9',
       'week8',
     ])
-    expect((await listRecordingsForCourse('inst360')).map((recording) => recording.id)).toEqual([
+    expect((await listRecordingsForCourse('inst630')).map((recording) => recording.id)).toEqual([
       'lecture17',
     ])
     expect(await listRecordingsForCourse('inst711')).toEqual([])
@@ -250,7 +280,60 @@ describe('delete forever with notes and moments', () => {
     expect((await listMomentsForRecording('week8')).map((stored) => stored.id)).toEqual(['c'])
   })
 
+  it('removes the audio and segments too, and leaves other recordings alone', async () => {
+    await saveRecording(makeRecording({ id: 'week9' }))
+    await saveRecording(makeRecording({ id: 'week8' }))
+    for (const recordingId of ['week9', 'week8']) {
+      const file = new File([new Uint8Array([1])], `${recordingId}.wav`, { type: 'audio/wav' })
+      await saveAudio({ recordingId, blob: file })
+      await saveSegments(recordingId, [
+        { index: 0, startSeconds: 0, endSeconds: 2, text: 'First line.' },
+        { index: 1, startSeconds: 2, endSeconds: 5, text: 'Second line.' },
+      ])
+    }
+
+    await deleteRecordingForever('week9')
+
+    expect(await getAudio('week9')).toBeUndefined()
+    expect(await listSegmentsForRecording('week9')).toEqual([])
+    expect((await getAudio('week8')).name).toBe('week8.wav')
+    expect(await listSegmentsForRecording('week8')).toHaveLength(2)
+  })
+
   it('does nothing when the recording does not exist', async () => {
     await expect(deleteRecordingForever('missing')).resolves.toBeUndefined()
+  })
+})
+
+describe('updateRecordingStatus', () => {
+  it('changes status, progress, and the error message, and keeps every other field', async () => {
+    await saveRecording(makeRecording({ status: 'queued', progress: 0 }))
+    const stored = await updateRecordingStatus('week9', {
+      status: 'failed',
+      progress: 0.5,
+      errorMessage: 'This file could not be read as audio',
+    })
+    expect(stored.status).toBe('failed')
+    expect(stored.progress).toBe(0.5)
+    expect(stored.errorMessage).toBe('This file could not be read as audio')
+    expect((await getRecording('week9')).title).toBe('Week 9 · Thematic analysis')
+  })
+
+  it('refuses fields other than status, progress, and errorMessage', async () => {
+    await saveRecording(makeRecording())
+    await expect(updateRecordingStatus('week9', { title: 'Renamed' })).rejects.toThrow(
+      /can only set status, progress, errorMessage, got title/
+    )
+    expect((await getRecording('week9')).title).toBe('Week 9 · Thematic analysis')
+  })
+
+  it('rejects a bad status, bad progress, and a missing recording', async () => {
+    await saveRecording(makeRecording())
+    await expect(updateRecordingStatus('week9', { status: 'paused' })).rejects.toThrow(TypeError)
+    await expect(updateRecordingStatus('week9', { progress: 2 })).rejects.toThrow(RangeError)
+    await expect(updateRecordingStatus('missing', { progress: 0 })).rejects.toThrow(
+      'no recording with id missing'
+    )
+    await expect(updateRecordingStatus('week9', null)).rejects.toThrow(/must be an object/)
   })
 })

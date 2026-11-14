@@ -1,9 +1,9 @@
-// the one indexeddb database that keeps courses and recordings on this device
+// the one indexeddb database that keeps courses, recordings, audio, and transcripts on this device
 
 import { openDB } from 'idb'
 
 export const databaseName = 'hark'
-export const databaseVersion = 2
+export const databaseVersion = 3
 
 // one shared connection, opened on first use
 let databasePromise = null
@@ -36,6 +36,14 @@ export function upgradeDatabase(database, oldVersion, newVersion) {
       database.createObjectStore('notes', { keyPath: 'recordingId' })
       const moments = database.createObjectStore('moments', { keyPath: 'id' })
       moments.createIndex('recordingId', 'recordingId')
+    }
+    // falls through
+    case 2: {
+      // version 3 adds the uploaded audio file and the transcript segments of each recording
+      if (newVersion < 3) break
+      database.createObjectStore('audio', { keyPath: 'recordingId' })
+      const segments = database.createObjectStore('segments', { keyPath: 'id' })
+      segments.createIndex('recordingId', 'recordingId')
     }
   }
 }

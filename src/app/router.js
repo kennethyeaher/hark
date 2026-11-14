@@ -15,6 +15,7 @@ const staticRoutes = {
 const idRoutes = {
   course: 'course',
   recording: 'recording',
+  transcribe: 'transcribe',
 }
 
 /**

@@ -66,10 +66,8 @@
   --panel-width: 340px;
   --content-padding: var(--space-7);
 
-  /* type */
-  --font-sans:
-    'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, Helvetica, Arial,
-    sans-serif;
+  /* type. system fonts, so the page makes no font request to another host */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
   --text-11: 11px;
   --text-12: 12px;

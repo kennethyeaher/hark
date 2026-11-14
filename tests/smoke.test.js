@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest'
 import { mountApp } from '../src/app/app.js'
 
 // smoke test: the shell mounts once and only the content region changes per route
@@ -182,5 +182,107 @@ describe('mountApp', () => {
 
   it('rejects a value that is not an element', () => {
     expect(() => mountApp('#app')).toThrow(/got #app/)
+  })
+})
+
+// jsdom has no showModal, so the sheet tests stand in for it with the open attribute
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal ??= function showModal() {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close ??= function close() {
+    if (!this.hasAttribute('open')) return
+    this.removeAttribute('open')
+    this.dispatchEvent(new Event('close'))
+  }
+})
+
+describe('the new recording sheet route', () => {
+  let app
+  const course = {
+    id: 'hcim605',
+    code: 'HCIM 605',
+    name: 'Qualitative Research Methods',
+    color: 'indigo',
+    recordingCount: 0,
+    totalSeconds: 0,
+  }
+  const newRoute = { name: 'new', params: {}, query: {} }
+
+  beforeEach(() => {
+    window.location.hash = '#/trash'
+    document.body.innerHTML = '<div id="app"></div>'
+  })
+
+  afterEach(() => {
+    app?.stopRouter()
+    app = undefined
+  })
+
+  it('opens over the page that was showing and marks the New button current', () => {
+    app = mountApp(document.querySelector('#app'), { courses: [course] })
+    const page = app.content.firstElementChild
+
+    const sheet = app.showRoute(newRoute)
+    expect(sheet.tagName).toBe('DIALOG')
+    expect(sheet.open).toBe(true)
+    expect(app.content.firstElementChild).toBe(page)
+    expect(app.content.querySelector('h1').textContent).toBe('Trash')
+    expect(document.querySelector('.sidebar-new-button').getAttribute('aria-current')).toBe('page')
+    expect(document.title).toBe('New recording · Hark')
+  })
+
+  it('shows Home under the sheet on a first load at the new route', () => {
+    window.location.hash = '#/new'
+    app = mountApp(document.querySelector('#app'), { courses: [course] })
+    expect(document.querySelector('dialog.sheet').open).toBe(true)
+    expect(app.content.querySelector('.page-home, h1')).not.toBeNull()
+  })
+
+  it('preselects the course named in the route', () => {
+    app = mountApp(document.querySelector('#app'), {
+      courses: [course, { ...course, id: 'inst630', code: 'INST 630', color: 'teal' }],
+    })
+    const sheet = app.showRoute({ name: 'new', params: {}, query: { course: 'inst630' } })
+    const checked = sheet.querySelector('input[name="new-recording-course"]:checked')
+    expect(checked.value).toBe('inst630')
+  })
+
+  it('goes back to the page under it when dismissed and returns focus to New', () => {
+    const navigate = vi.fn()
+    app = mountApp(document.querySelector('#app'), { courses: [course], navigate })
+    const sheet = app.showRoute(newRoute)
+
+    sheet.querySelector('.sheet-close').click()
+    expect(navigate).toHaveBeenCalledWith('#/trash')
+
+    // the router follows the hash change back to the page under the sheet
+    app.showRoute({ name: 'trash', params: {}, query: {} })
+    expect(document.querySelector('dialog.sheet')).toBeNull()
+    expect(document.activeElement).toBe(document.querySelector('.sidebar-new-button'))
+    expect(document.querySelector('.sidebar-new-button').hasAttribute('aria-current')).toBe(false)
+  })
+
+  it('treats a close by the browser as a dismissal', () => {
+    const navigate = vi.fn()
+    app = mountApp(document.querySelector('#app'), { courses: [course], navigate })
+    app.showRoute(newRoute).close()
+    expect(navigate).toHaveBeenCalledWith('#/trash')
+  })
+
+  it('closes without moving focus to New when another route takes over', () => {
+    app = mountApp(document.querySelector('#app'), { courses: [course], navigate: vi.fn() })
+    app.showRoute(newRoute)
+    app.showRoute({ name: 'settings', params: {}, query: {} })
+    expect(document.querySelector('dialog.sheet')).toBeNull()
+    expect(document.activeElement).toBe(app.content.querySelector('h1'))
+  })
+
+  it('keeps the sheet and its state when the data reloads', () => {
+    app = mountApp(document.querySelector('#app'), { courses: [course], navigate: vi.fn() })
+    const sheet = app.showRoute(newRoute)
+    app.updateData({ courses: [{ ...course, recordingCount: 1 }], recordings: [] })
+    expect(document.querySelector('dialog.sheet')).toBe(sheet)
+    expect(document.querySelector('.sidebar-new-button').getAttribute('aria-current')).toBe('page')
   })
 })

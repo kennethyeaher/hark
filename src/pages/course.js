@@ -58,10 +58,14 @@ function renderCourseHeader(course) {
         formatDuration(course.totalSeconds),
       ]),
     ]),
-    createElement('a', { className: 'button button-primary', href: '#/new' }, [
-      createIcon(plusIconPaths),
-      'New recording',
-    ]),
+    createElement(
+      'a',
+      {
+        className: 'button button-primary',
+        href: `#/new?course=${encodeURIComponent(course.id)}`,
+      },
+      [createIcon(plusIconPaths), 'New recording']
+    ),
   ])
   header.style.setProperty('--course-header-color', `var(--course-${course.color})`)
   return header

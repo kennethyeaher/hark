@@ -20,7 +20,7 @@
   <a href="#verification">Verification</a>
 </p>
 
-> **Status: in development.** Hark is my final project for INST360 at the University of Maryland. The design is finished. The app is being built in the order shown in the [roadmap](#roadmap), and this README only claims what is checked off there.
+> **Status: in development.** Hark is my final project for INST 630 at the University of Maryland. The design is finished. The app is being built in the order shown in the [roadmap](#roadmap), and this README only claims what is checked off there.
 
 ---
 
@@ -223,7 +223,7 @@ Folders for pages, ui components, ml workers, and indexeddb access arrive with t
 
 ## Source and submission
 
-Built for INST360 at the University of Maryland, College Park, Fall 2026. Design work lives in the [Figma file](https://www.figma.com/design/IVA3ualHLLG2oKJXf85NlL/INST360-final). Pattern references come from *Designing Interfaces*, 3rd edition, and *Don't Make Me Think, Revisited*. Accessibility targets follow WCAG 2.1 AA as covered in the course readings.
+Built for INST 630 at the University of Maryland, College Park, Fall 2026. Design work lives in the [Figma file](https://www.figma.com/design/IVA3ualHLLG2oKJXf85NlL/INST360-final). Pattern references come from *Designing Interfaces*, 3rd edition, and *Don't Make Me Think, Revisited*. Accessibility targets follow WCAG 2.1 AA as covered in the course readings.
 
 ## Author
 

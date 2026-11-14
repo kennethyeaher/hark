@@ -281,6 +281,9 @@ export function setSidebarActive(sidebarElement, route) {
   let match = null
   if (route.name === 'home') {
     match = sidebarElement.querySelector('[data-route-key="home"]')
+  } else if (route.name === 'new') {
+    // the New button stands for the sheet while it is open
+    match = sidebarElement.querySelector('.sidebar-new-button')
   } else if (route.name === 'course') {
     const courseLinks = sidebarElement.querySelectorAll('[data-course-id]')
     match = [...courseLinks].find((link) => link.dataset.courseId === route.params?.id) ?? null
@@ -309,17 +312,23 @@ export function renderSidebar({ courses, activeRoute }) {
 
   // main list and course list share one primary nav
   const mainList = createElement('ul', { className: 'sidebar-list' }, mainLinks.map(createNavItem))
-  // a plain label, not a heading, so the page h1 stays the first heading in the document
-  const courseHeading = createElement('p', {
-    className: 'sidebar-heading',
-    id: 'sidebar-courses-heading',
-    text: 'Courses',
-  })
-  const courseList = createElement(
-    'ul',
-    { className: 'sidebar-list', 'aria-labelledby': 'sidebar-courses-heading' },
-    courses.map(createCourseItem)
-  )
+  // a plain label, not a heading, so the page h1 stays the first heading in the document.
+  // with no courses the label and its empty list are left out, so nothing labels empty space.
+  const hasCourses = courses.length > 0
+  const courseHeading =
+    hasCourses &&
+    createElement('p', {
+      className: 'sidebar-heading',
+      id: 'sidebar-courses-heading',
+      text: 'Courses',
+    })
+  const courseList =
+    hasCourses &&
+    createElement(
+      'ul',
+      { className: 'sidebar-list', 'aria-labelledby': 'sidebar-courses-heading' },
+      courses.map(createCourseItem)
+    )
   const settingsList = createElement('ul', { className: 'sidebar-list sidebar-list-bottom' }, [
     createNavItem(settingsLink),
   ])

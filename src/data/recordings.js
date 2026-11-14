@@ -7,13 +7,16 @@ import { assertDate, assertNonNegativeNumber, assertObject, assertText } from '.
 /** every status a recording can be in, from upload to summary */
 export const recordingStatuses = ['queued', 'transcribing', 'transcribed', 'summarized', 'failed']
 
+/** the whisper model choices a recording can be transcribed with */
+export const recordingModels = ['fast', 'balanced', 'accurate']
+
 /**
  * check a recording and copy only the fields the store keeps, filling defaults for a new one.
  * this does not check that the course exists, because that needs the database.
  * @param {unknown} recording recording to check, with or without an id
  * @param {Date} [now] time used for createdAt and recordedAt when they are missing
  * @returns {object} the recording to store
- * @throws {TypeError} when a field is missing, has the wrong type, or the status is unknown
+ * @throws {TypeError} when a field is missing, has the wrong type, or the status or model is unknown
  * @throws {RangeError} when durationSeconds is negative or progress is outside 0 to 1
  */
 export function normalizeRecording(recording, now = new Date()) {
@@ -33,6 +36,8 @@ export function normalizeRecording(recording, now = new Date()) {
     progress: recording.progress ?? 0,
     isStarred: recording.isStarred ?? false,
     deletedAt: recording.deletedAt ?? null,
+    model: recording.model ?? 'balanced',
+    errorMessage: recording.errorMessage ?? null,
   }
 
   assertText(stored.title, `${label} title`)
@@ -54,6 +59,16 @@ export function normalizeRecording(recording, now = new Date()) {
     throw new TypeError(`${label} isStarred must be true or false, got ${String(stored.isStarred)}`)
   }
   if (stored.deletedAt !== null) assertDate(stored.deletedAt, `${label} deletedAt`)
+  if (!recordingModels.includes(stored.model)) {
+    throw new TypeError(
+      `${label} model must be one of ${recordingModels.join(', ')}, got ${String(stored.model)}`
+    )
+  }
+  if (stored.errorMessage !== null && typeof stored.errorMessage !== 'string') {
+    throw new TypeError(
+      `${label} errorMessage must be a string or null, got ${String(stored.errorMessage)}`
+    )
+  }
   return stored
 }
 
@@ -144,6 +159,46 @@ async function updateRecording(id, change) {
   return stored
 }
 
+// the fields a transcription job may change on a recording as it runs
+const statusFields = ['status', 'progress', 'errorMessage']
+
+/**
+ * copy a recording with new status fields and check the result. only status, progress, and
+ * errorMessage can change this way, so a job cannot rename or move a recording by mistake.
+ * @param {object} recording the stored recording
+ * @param {{ status?: string, progress?: number, errorMessage?: string | null }} changes
+ *   the fields to change
+ * @returns {object} the changed recording, ready to store
+ * @throws {TypeError} when changes is not an object, names another field, or the result
+ *   fails validation
+ * @throws {RangeError} when progress is outside 0 to 1
+ */
+export function applyStatusChanges(recording, changes) {
+  assertObject(changes, 'status changes')
+  const unknownFields = Object.keys(changes).filter((field) => !statusFields.includes(field))
+  if (unknownFields.length > 0) {
+    throw new TypeError(
+      `status changes can only set ${statusFields.join(', ')}, got ${unknownFields.join(', ')}`
+    )
+  }
+  return normalizeRecording({ ...recording, ...changes })
+}
+
+/**
+ * change the status, progress, or error message of a stored recording.
+ * @param {string} id recording id
+ * @param {{ status?: string, progress?: number, errorMessage?: string | null }} changes
+ *   the fields to change
+ * @returns {Promise<object>} the recording as stored
+ * @throws {Error} when there is no recording with that id
+ * @throws {TypeError} when changes names another field or the result fails validation
+ * @throws {RangeError} when progress is outside 0 to 1
+ */
+export async function updateRecordingStatus(id, changes) {
+  assertObject(changes, 'status changes')
+  return updateRecording(id, (recording) => applyStatusChanges(recording, changes))
+}
+
 /**
  * move a recording to Trash by setting deletedAt. its data stays until it is deleted forever.
  * @param {string} id recording id
@@ -166,8 +221,9 @@ export function restoreRecording(id) {
 }
 
 /**
- * remove a recording, its note, and its moments for good, all in one transaction, so a
- * failure part way leaves every one of them in place. nothing in the ui calls this yet.
+ * remove a recording, its note, moments, audio, and segments for good, all in one
+ * transaction, so a failure part way leaves every one of them in place. nothing in the ui
+ * calls this yet.
  * @param {string} id recording id
  * @returns {Promise<void>} resolves once the recording and everything that belongs to it is gone
  * @throws {TypeError} when id is not a non empty string
@@ -175,12 +231,20 @@ export function restoreRecording(id) {
 export async function deleteRecordingForever(id) {
   assertText(id, 'recording id')
   const database = await openDatabase()
-  const transaction = database.transaction(['recordings', 'notes', 'moments'], 'readwrite')
-  const momentIds = await transaction.objectStore('moments').index('recordingId').getAllKeys(id)
+  const transaction = database.transaction(
+    ['recordings', 'notes', 'moments', 'audio', 'segments'],
+    'readwrite'
+  )
+  const [momentIds, segmentIds] = await Promise.all([
+    transaction.objectStore('moments').index('recordingId').getAllKeys(id),
+    transaction.objectStore('segments').index('recordingId').getAllKeys(id),
+  ])
   await Promise.all([
     transaction.objectStore('recordings').delete(id),
     transaction.objectStore('notes').delete(id),
+    transaction.objectStore('audio').delete(id),
     ...momentIds.map((momentId) => transaction.objectStore('moments').delete(momentId)),
+    ...segmentIds.map((segmentId) => transaction.objectStore('segments').delete(segmentId)),
     transaction.done,
   ])
   announceChange('recordings', id)

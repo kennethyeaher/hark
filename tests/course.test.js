@@ -51,9 +51,9 @@ describe('course header', () => {
     expect(meta).toContain('8 hr 02 min')
   })
 
-  it('links New recording to the new route', () => {
+  it('links New recording to the new route with this course picked', () => {
     const button = page.querySelector('.button-primary')
-    expect(button.getAttribute('href')).toBe('#/new')
+    expect(button.getAttribute('href')).toBe('#/new?course=hcim605')
     expect(button.textContent).toBe('New recording')
   })
 })

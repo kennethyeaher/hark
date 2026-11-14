@@ -10,9 +10,13 @@ import {
 describe('formatDuration', () => {
   it.each([
     [0, '0 min'],
-    [29, '0 min'],
-    [30, '1 min'],
+    [0.2, 'under 1 min'],
+    [4, 'under 1 min'],
+    [29, 'under 1 min'],
+    [59.9, 'under 1 min'],
     [60, '1 min'],
+    [89, '1 min'],
+    [90, '2 min'],
     [3120, '52 min'],
     [3600, '1 hr 00 min'],
     [4080, '1 hr 08 min'],
@@ -91,7 +95,7 @@ describe('formatRecordingCount', () => {
 })
 
 describe('assertCourse', () => {
-  const course = { id: 'c1', code: 'INST 360', color: 'teal', recordingCount: 3 }
+  const course = { id: 'c1', code: 'INST 630', color: 'teal', recordingCount: 3 }
 
   it('accepts a complete course', () => {
     expect(() => assertCourse(course, 'test')).not.toThrow()

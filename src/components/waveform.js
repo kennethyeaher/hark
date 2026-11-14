@@ -6,6 +6,7 @@ const barGap = 3.5
 const minimumBarHeight = 0.3
 const tallBarThreshold = 0.7
 const dimmedOpacity = 0.55
+const pendingOpacity = 0.3
 
 /**
  * hash a string to a 32 bit unsigned integer with FNV 1a.
@@ -60,20 +61,40 @@ export function buildBarHeights(seed, barCount) {
 }
 
 /**
+ * check that a progress fraction is a number from 0 to 1.
+ * @param {unknown} fraction value to check
+ * @returns {void}
+ * @throws {RangeError} when fraction is not a number from 0 to 1
+ */
+function assertFraction(fraction) {
+  if (typeof fraction !== 'number' || !(fraction >= 0 && fraction <= 1)) {
+    throw new RangeError(`progressFraction must be a number from 0 to 1, got ${String(fraction)}`)
+  }
+}
+
+/**
  * render a decorative waveform svg for a recording.
- * @param {{ seed: string, color: string, barCount?: number, height?: number }} options
- *   seed picks the bar pattern, color is a course color name
+ * @param {{ seed: string, color: string, barCount?: number, height?: number,
+ *   progressFraction?: number | null }} options seed picks the bar pattern, color is a course
+ *   color name, and progressFraction, when given, splits the bars into done and still to go
  * @returns {SVGSVGElement} an aria hidden svg at its natural width
  * @throws {TypeError} when seed or color is invalid
- * @throws {RangeError} when barCount or height is out of range
+ * @throws {RangeError} when barCount, height, or progressFraction is out of range
  */
-export function renderWaveform({ seed, color, barCount = 32, height = 38 }) {
+export function renderWaveform({
+  seed,
+  color,
+  barCount = 32,
+  height = 38,
+  progressFraction = null,
+}) {
   if (!courseColors.includes(color)) {
     throw new TypeError(`color must be one of ${courseColors.join(', ')}, got ${String(color)}`)
   }
   if (typeof height !== 'number' || !Number.isFinite(height) || height <= 0) {
     throw new RangeError(`height must be a positive number, got ${String(height)}`)
   }
+  if (progressFraction !== null) assertFraction(progressFraction)
   const heights = buildBarHeights(seed, barCount)
 
   // width is natural so bars never stretch, css caps it with max width
@@ -104,5 +125,23 @@ export function renderWaveform({ seed, color, barCount = 32, height = 38 }) {
       })
     )
   })
+  if (progressFraction !== null) setWaveformProgress(svg, progressFraction)
   return svg
+}
+
+/**
+ * split a waveform into done and still to go: bars up to the fraction show in full color and
+ * the rest in a light tint. color is not the only signal, since the page shows the percent too.
+ * @param {SVGSVGElement} svg a waveform from renderWaveform
+ * @param {number} fraction progress from 0 to 1
+ * @returns {void}
+ * @throws {RangeError} when fraction is not a number from 0 to 1
+ */
+export function setWaveformProgress(svg, fraction) {
+  assertFraction(fraction)
+  const bars = [...svg.querySelectorAll('rect')]
+  const doneCount = Math.round(fraction * bars.length)
+  bars.forEach((bar, index) => {
+    bar.setAttribute('opacity', String(index < doneCount ? 1 : pendingOpacity))
+  })
 }

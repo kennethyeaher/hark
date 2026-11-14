@@ -19,7 +19,8 @@ const monthNames = [
 ]
 
 /**
- * format a length in seconds as whole minutes, such as `52 min` or `1 hr 08 min`.
+ * format a length in seconds as whole minutes, such as `52 min` or `1 hr 08 min`. a clip shorter
+ * than a minute reads `under 1 min`, so it never looks empty, while 0 stays `0 min`.
  * @param {number} seconds duration in seconds, zero or more
  * @returns {string} the formatted duration
  * @throws {TypeError} when seconds is not a number or is NaN
@@ -32,6 +33,8 @@ export function formatDuration(seconds) {
   if (!Number.isFinite(seconds) || seconds < 0) {
     throw new RangeError(`seconds must be finite and not negative, got ${seconds}`)
   }
+
+  if (seconds > 0 && seconds < 60) return 'under 1 min'
 
   // round to whole minutes first so 59 min 40 s becomes 1 hr 00 min
   const totalMinutes = Math.round(seconds / 60)

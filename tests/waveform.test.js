@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest'
-import { buildBarHeights, renderWaveform } from '../src/components/waveform.js'
+import { buildBarHeights, renderWaveform, setWaveformProgress } from '../src/components/waveform.js'
 
 describe('buildBarHeights', () => {
   it('returns the same heights for the same seed', () => {
@@ -75,5 +75,36 @@ describe('renderWaveform', () => {
     expect(() => renderWaveform({ seed: 'a', color: 'blue' })).toThrow(TypeError)
     expect(() => renderWaveform({ seed: 'a', color: 'teal', barCount: 0 })).toThrow(RangeError)
     expect(() => renderWaveform({ seed: 'a', color: 'teal', height: 0 })).toThrow(RangeError)
+  })
+})
+
+describe('waveform progress', () => {
+  /**
+   * read every bar's opacity.
+   * @param {SVGSVGElement} svg the waveform
+   * @returns {string[]} opacities in order
+   */
+  function opacities(svg) {
+    return [...svg.querySelectorAll('rect')].map((bar) => bar.getAttribute('opacity'))
+  }
+
+  it('shows bars up to the fraction in full color and the rest in the tint', () => {
+    const svg = renderWaveform({ seed: 'a', color: 'indigo', barCount: 10, progressFraction: 0.4 })
+    expect(opacities(svg)).toEqual(['1', '1', '1', '1', '0.3', '0.3', '0.3', '0.3', '0.3', '0.3'])
+  })
+
+  it('updates in place', () => {
+    const svg = renderWaveform({ seed: 'a', color: 'indigo', barCount: 4, progressFraction: 0 })
+    expect(opacities(svg)).toEqual(['0.3', '0.3', '0.3', '0.3'])
+    setWaveformProgress(svg, 1)
+    expect(opacities(svg)).toEqual(['1', '1', '1', '1'])
+  })
+
+  it('rejects a fraction outside 0 to 1', () => {
+    expect(() => renderWaveform({ seed: 'a', color: 'indigo', progressFraction: 1.2 })).toThrow(
+      RangeError
+    )
+    const svg = renderWaveform({ seed: 'a', color: 'indigo' })
+    expect(() => setWaveformProgress(svg, Number.NaN)).toThrow(/from 0 to 1/)
   })
 })

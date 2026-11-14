@@ -16,8 +16,8 @@ const courses = [
     recordingCount: 12,
   },
   {
-    id: 'inst360',
-    code: 'INST 360',
+    id: 'inst630',
+    code: 'INST 630',
     name: 'Information Ethics',
     color: 'teal',
     recordingCount: 10,
@@ -61,7 +61,7 @@ describe('renderSidebar', () => {
       '#/starred',
       '#/trash',
       '#/course/hcim605',
-      '#/course/inst360',
+      '#/course/inst630',
       '#/course/info615',
       '#/course/hcim620',
       '#/settings',
@@ -76,8 +76,8 @@ describe('renderSidebar', () => {
   })
 
   it('marks only the matching course on a course route', () => {
-    const sidebar = build('course', { id: 'inst360' })
-    expect(currentHrefs(sidebar)).toEqual(['#/course/inst360'])
+    const sidebar = build('course', { id: 'inst630' })
+    expect(currentHrefs(sidebar)).toEqual(['#/course/inst630'])
     expect(sidebar.querySelector('[data-route-key="home"]').hasAttribute('aria-current')).toBe(
       false
     )
@@ -105,6 +105,21 @@ describe('renderSidebar', () => {
       activeRoute: { name: 'home', params: {}, query: {} },
     })
     expect(sidebar.querySelector('.sidebar-storage-detail').textContent).toBe('1 recording')
+  })
+
+  it('shows the Courses label when there are courses', () => {
+    const sidebar = build('home')
+    const label = sidebar.querySelector('#sidebar-courses-heading')
+    expect(label.textContent).toBe('Courses')
+    expect(sidebar.querySelector('[aria-labelledby="sidebar-courses-heading"]')).not.toBeNull()
+  })
+
+  it('leaves out the Courses label and list when there are no courses', () => {
+    const sidebar = renderSidebar({ courses: [], activeRoute: { name: 'home', params: {} } })
+    expect(sidebar.querySelector('#sidebar-courses-heading')).toBeNull()
+    expect(sidebar.querySelector('[aria-labelledby="sidebar-courses-heading"]')).toBeNull()
+    expect(sidebar.textContent).not.toContain('Courses')
+    expect(sidebar.querySelector('nav a[href="#/settings"]')).not.toBeNull()
   })
 
   it('throws specific errors on bad courses', () => {

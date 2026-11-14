@@ -6,19 +6,22 @@ import './styles/sidebar.css'
 import './styles/topbar.css'
 import './styles/components.css'
 import './styles/pages.css'
+import './styles/sheet.css'
 import { mountApp } from './app/app.js'
 import { loadLibrary } from './data/library.js'
 import { dataEvents } from './data/events.js'
 import { seedSampleLibrary } from './data/seed.js'
 import { renderStorageError } from './pages/storage-error.js'
+import { resumeQueuedRecordings } from './transcription/jobs.js'
 
 /**
  * load the library and mount the app, or show the storage error page when indexeddb will not open.
  * @param {HTMLElement} root element that receives the app
  * @returns {Promise<void>} resolves once the first page is on screen
  *
- * side effect: seeds the samples into an empty library in development, and reloads the
- * library and redraws the app after every write to the store.
+ * side effect: seeds the samples into an empty library in development, reloads the library
+ * and redraws the app after every write to the store, and picks up transcriptions that a
+ * closed tab left unfinished.
  */
 async function startApp(root) {
   let library
@@ -75,6 +78,13 @@ async function startApp(root) {
     }
   }
   dataEvents.addEventListener('change', reload)
+
+  // closing the tab pauses a transcription, so anything left unfinished starts again here
+  try {
+    await resumeQueuedRecordings()
+  } catch (error) {
+    console.error('Hark could not resume unfinished transcriptions', error)
+  }
 }
 
 startApp(document.querySelector('#app'))

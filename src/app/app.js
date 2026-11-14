@@ -8,11 +8,14 @@ import { destroyTopbar, renderTopbar, setSearchQuery } from '../components/topba
 import { getView, subscribeToView } from './view.js'
 import { renderHome } from '../pages/home.js'
 import { renderCourse } from '../pages/course.js'
+import { renderNewRecordingSheet } from '../pages/new-recording.js'
+import { renderTranscribing } from '../pages/transcribing.js'
 
 // pages built so far, keyed by route name
 const pageRenderers = {
   home: renderHome,
   course: renderCourse,
+  transcribe: renderTranscribing,
 }
 
 // titles for routes whose pages arrive in later milestones
@@ -24,14 +27,15 @@ const placeholderTitles = {
   trash: 'Trash',
   settings: 'Settings',
   search: 'Search',
-  new: 'New recording',
 }
+
+const homeRoute = { name: 'home', params: {}, query: {} }
 
 /**
  * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
- * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void> }} data
- *   app data and actions passed to built pages
+ * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void>,
+ *   navigate: (hash: string) => void }} data app data and actions passed to built pages
  * @returns {HTMLElement} the page to show in the content area
  */
 function renderPage(route, data) {
@@ -91,44 +95,125 @@ function announcePage(page, shouldMoveFocus) {
 }
 
 /**
+ * send the browser to a hash route.
+ * @param {string} hash target such as `#/`
+ * @returns {void}
+ */
+function navigateToHash(hash) {
+  window.location.hash = hash
+}
+
+/**
  * render the app shell into the root element once, then swap only the page
- * content when the route changes.
+ * content when the route changes. the new recording route opens a sheet over the page that
+ * was showing instead of replacing it.
  * @param {HTMLElement} root element that receives the app
- * @param {{ courses?: object[], recordings?: object[], onLoadSamples?: () => Promise<void> }} [data]
- *   courses and recordings to show, and the action behind the empty state's sample button
+ * @param {{ courses?: object[], recordings?: object[], onLoadSamples?: () => Promise<void>,
+ *   navigate?: (hash: string) => void }} [data] courses and recordings to show, the action
+ *   behind the empty state's sample button, and how to change the route
  * @returns {{ content: HTMLElement, showRoute: (route: object) => HTMLElement,
  *   updateData: (next: { courses: object[], recordings: object[] }) => void, stopRouter: () => void }}
  *   the content region, a function that shows a parsed route, one that redraws with new data,
  *   and one that stops listening
  * @throws {Error} when root is missing or is not an html element
  */
-export function mountApp(root, { courses = [], recordings = [], onLoadSamples } = {}) {
+export function mountApp(
+  root,
+  { courses = [], recordings = [], onLoadSamples, navigate = navigateToHash } = {}
+) {
   if (!(root instanceof HTMLElement)) {
     throw new Error(`mountApp needs an HTMLElement root element, and got ${String(root)}`)
   }
 
   const layout = buildLayout()
-  let sidebar = renderSidebar({ courses, activeRoute: { name: 'home', params: {}, query: {} } })
+  let sidebar = renderSidebar({ courses, activeRoute: homeRoute })
   layout.sidebarSlot.append(sidebar)
   const topbar = renderTopbar()
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
   let hasShownPage = false
-  const data = { courses, recordings, onLoadSamples }
+  const data = { courses, recordings, onLoadSamples, navigate }
+  // the open New recording sheet, the route that opened it, and the hash of the page under it
+  let sheet = null
+  let backgroundHash = '#/'
 
   /**
    * render the page for a route into the content region.
    * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
    * @returns {HTMLElement} the page that was rendered
    */
-  function showRoute(route) {
+  function renderBackground(route) {
     currentRoute = route
     const page = renderPage(route, data)
     layout.content.replaceChildren(page)
-    setSidebarActive(sidebar, route)
     setSearchQuery(topbar, route.name === 'search' ? (route.query.q ?? '') : '')
-    announcePage(page, hasShownPage)
+    return page
+  }
+
+  /**
+   * close and remove the sheet when it is open.
+   * @returns {boolean} true when the sheet was closed by its own Close, Cancel, Escape, or
+   *   backdrop, so focus goes back to the New button
+   */
+  function closeSheet() {
+    if (!sheet) return false
+    const { dialog, wasDismissed } = sheet
+    sheet = null
+    if (dialog.open) dialog.close()
+    dialog.remove()
+    return wasDismissed
+  }
+
+  /**
+   * open the New recording sheet over the current page, or over Home on a first load.
+   * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route
+   *   the new recording route, with an optional course in its query
+   * @returns {HTMLDialogElement} the open sheet
+   */
+  function showSheet(route) {
+    if (!currentRoute) renderBackground(homeRoute)
+    setSidebarActive(sidebar, route)
+    document.title = 'New recording · Hark'
+    hasShownPage = true
+    if (sheet) return sheet.dialog
+
+    const dialog = renderNewRecordingSheet({
+      courses: data.courses,
+      initialCourseId: route.query.course,
+      onDismiss: () => {
+        if (sheet) sheet.wasDismissed = true
+        navigate(backgroundHash)
+      },
+      onStart: (recordingId) => navigate(`#/transcribe/${encodeURIComponent(recordingId)}`),
+    })
+    sheet = { dialog, route, wasDismissed: false }
+    // the browser can close a modal on its own, for example on a second Escape, so a close
+    // that did not come from closeSheet counts as a dismissal
+    dialog.addEventListener('close', () => {
+      if (sheet?.dialog !== dialog) return
+      sheet.wasDismissed = true
+      navigate(backgroundHash)
+    })
+    layout.shell.append(dialog)
+    dialog.showModal()
+    return dialog
+  }
+
+  /**
+   * show a parsed route: a page in the content region, or the sheet over it.
+   * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
+   * @returns {HTMLElement} the page that was rendered, or the sheet
+   */
+  function showRoute(route) {
+    if (route.name === 'new') return showSheet(route)
+    const wasSheetDismissed = closeSheet()
+    backgroundHash = window.location.hash || '#/'
+    const page = renderBackground(route)
+    setSidebarActive(sidebar, route)
+    announcePage(page, hasShownPage && !wasSheetDismissed)
+    // a dismissed sheet hands focus back to the button that opened it
+    if (wasSheetDismissed) sidebar.querySelector('.sidebar-new-button')?.focus()
     hasShownPage = true
     return page
   }
@@ -158,7 +243,7 @@ export function mountApp(root, { courses = [], recordings = [], onLoadSamples } 
     const sidebarFocus = describeFocus(layout.sidebarSlot)
     const contentFocus = describeFocus(layout.content)
 
-    const activeRoute = currentRoute ?? { name: 'home', params: {}, query: {} }
+    const activeRoute = sheet?.route ?? currentRoute ?? homeRoute
     const nextSidebar = renderSidebar({ courses: data.courses, activeRoute })
     sidebar.replaceWith(nextSidebar)
     sidebar = nextSidebar
@@ -177,6 +262,7 @@ export function mountApp(root, { courses = [], recordings = [], onLoadSamples } 
    */
   function stopRouter() {
     stopListening()
+    closeSheet()
     stopViewUpdates()
     destroyTopbar(topbar)
   }

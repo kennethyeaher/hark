@@ -14,7 +14,7 @@ describe('buildSampleLibrary', () => {
     const { courses } = buildSampleLibrary(now)
     expect(courses.map((course) => [course.code, course.name])).toEqual([
       ['HCIM 605', 'Qualitative Research Methods'],
-      ['INST 360', 'Programming Human-Centered Interfaces'],
+      ['INST 630', 'Programming Human-Centered Interfaces'],
       ['INST 737', 'Data Science Techniques'],
       ['INST 711', 'Interaction Design Studio'],
     ])
@@ -42,6 +42,14 @@ describe('buildSampleLibrary', () => {
       'lecture17-client-side-ml',
     ])
     expect(library.courses[0].id).toBe('hcim605')
+  })
+
+  it('leaves no sample mid job, since samples have no audio to resume from', () => {
+    const { recordings } = buildSampleLibrary(now)
+    const lecture17 = recordings.find((recording) => recording.id === 'lecture17-client-side-ml')
+    expect(lecture17).toMatchObject({ status: 'transcribed', progress: 1 })
+    const statuses = new Set(recordings.map((recording) => recording.status))
+    expect([...statuses].sort()).toEqual(['summarized', 'transcribed'])
   })
 
   it('rejects an invalid date', () => {
@@ -87,7 +95,7 @@ describe('seedSampleLibrary', () => {
       library.courses.map((course) => [course.code, course.recordingCount, course.totalSeconds])
     ).toEqual([
       ['HCIM 605', 8, 482 * 60],
-      ['INST 360', 1, 52 * 60],
+      ['INST 630', 1, 52 * 60],
       ['INST 737', 1, 41 * 60],
       ['INST 711', 1, 58 * 60],
     ])
