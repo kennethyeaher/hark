@@ -87,7 +87,12 @@ export function createTranscriptionClient() {
     if (worker) return worker
     worker = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })
     worker.onmessage = handleWorkerMessage
-    // a worker that crashes cannot be trusted with the next job, so it is replaced
+    /**
+     * a worker that crashes cannot be trusted with the next job, so it is dropped and the
+     * pending job rejects.
+     * @param {ErrorEvent} event the error from the worker
+     * @returns {void}
+     */
     worker.onerror = (event) => {
       worker?.terminate()
       worker = null

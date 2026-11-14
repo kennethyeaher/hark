@@ -23,4 +23,9 @@ const transcriber = createTranscriber({
   post: (message) => self.postMessage(message),
 })
 
+/**
+ * hand each message from the page to the transcriber.
+ * @param {MessageEvent} event message from the page
+ * @returns {Promise<void>} resolves once the message is handled
+ */
 self.onmessage = (event) => transcriber.handleMessage(event.data)
