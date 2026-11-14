@@ -1,6 +1,6 @@
 // the page side of transcription: starts the worker, sends audio, and hands back the transcript
 
-import { getModel } from './models.js'
+import { defaultModelKey, getModel } from './models.js'
 
 /**
  * check that an optional callback is a function when it is given.
@@ -120,7 +120,7 @@ export function createTranscriptionClient() {
   async function transcribe({
     samples,
     durationSeconds,
-    modelKey = 'balanced',
+    modelKey = defaultModelKey,
     onDownload,
     onReady,
     onChunk,
