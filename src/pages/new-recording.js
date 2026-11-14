@@ -28,7 +28,7 @@ const fileIconPaths = ['M7 3h7l5 5v13H7z', 'M14 3v5h5']
 const lockIconPaths = ['M6 11h12v10H6z', 'M8.5 11V8a3.5 3.5 0 0 1 7 0v3']
 
 /** what the file input offers in the browser's picker */
-export const acceptedFileTypes = 'audio/*,.m4a,.mp3,.wav,.webm,.ogg'
+const acceptedFileTypes = 'audio/*,.m4a,.mp3,.wav,.webm,.ogg'
 
 /** the longest code and name a new course can have */
 const courseCodeMaxLength = 20
