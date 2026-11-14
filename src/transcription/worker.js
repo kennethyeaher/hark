@@ -2,10 +2,16 @@
 
 import { env, pipeline } from '@huggingface/transformers'
 import { createTranscriber } from './transcriber.js'
+import onnxRuntimeWasmUrl from 'onnx-runtime-wasm?url'
+import onnxRuntimeLoaderUrl from 'onnx-runtime-loader?url'
 
 // models come only from the hugging face hub and stay in the browser cache after the first visit
 env.allowLocalModels = false
 env.useBrowserCache = true
+
+// transformers.js would fetch the onnx runtime from cdn.jsdelivr.net. the site serves its own
+// copy instead, so the model download is the only request that leaves for another host
+env.backends.onnx.wasm.wasmPaths = { wasm: onnxRuntimeWasmUrl, mjs: onnxRuntimeLoaderUrl }
 
 const transcriber = createTranscriber({
   /**
