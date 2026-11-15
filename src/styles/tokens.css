@@ -19,6 +19,8 @@
   /* actions and status. blue is for actions only, never a course color */
   --color-blue: #0b63e5;
   --color-blue-tint: #eaf2ff;
+  /* unplayed waveform bars. lighter than blue but still 3:1 on the grouped player card */
+  --color-blue-soft: #5a8ce8;
   --color-green: #1e8e3e;
   --color-red: #d93025;
   --color-on-blue: #ffffff;

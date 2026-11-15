@@ -1,0 +1,290 @@
+/* the Recording page: header across the top, transcript column, and the rail on the right */
+
+/* the rail runs to the right and bottom edges of the window, as in the mock */
+.page-recording {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--content-padding)) calc(-1 * var(--space-7));
+  min-height: calc(100dvh - 72px);
+}
+
+/* header: back, crumb and title, then the actions */
+.recording-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px var(--content-padding);
+}
+
+.recording-back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-label);
+  background: var(--color-fill);
+  border: 0;
+  border-radius: 17px;
+}
+
+.recording-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.recording-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+}
+
+.recording-crumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-secondary-label);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.recording-crumb-link:hover {
+  color: var(--color-label);
+}
+
+.recording-crumb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.recording-title {
+  font-size: var(--text-22);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+}
+
+.recording-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.recording-star,
+.recording-more {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+}
+
+.recording-star:hover,
+.recording-more:hover,
+.recording-back:hover {
+  background: var(--color-separator);
+}
+
+.recording-star.is-starred {
+  color: var(--course-orange);
+}
+
+.recording-star.is-starred .icon {
+  fill: currentColor;
+}
+
+/* coming soon buttons stay focusable, so they only look quieter */
+.recording-actions [aria-disabled='true'] {
+  color: var(--color-secondary-label);
+  cursor: not-allowed;
+}
+
+.recording-actions [aria-disabled='true']:hover {
+  background: transparent;
+}
+
+.recording-export {
+  border-radius: 9px;
+}
+
+/* the transcript column and the rail share the space under the header */
+.recording-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) var(--panel-width);
+}
+
+.recording-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 0 var(--content-padding) var(--space-7);
+  container-type: inline-size;
+}
+
+/* player card */
+.player-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 14px 18px;
+  background: var(--color-grouped);
+  border-radius: var(--radius-card);
+}
+
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.player-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.player-skip {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+  border-radius: 17px;
+}
+
+.player-skip:hover:not(:disabled) {
+  background: var(--color-fill);
+}
+
+.player-play {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-on-blue);
+  background: var(--color-blue);
+  border: 0;
+  border-radius: 22px;
+}
+
+.player-play:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-blue) 88%, #000000);
+}
+
+.player-card button:disabled,
+.player-speed:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.player-time {
+  flex: none;
+  font-size: var(--text-13);
+  font-variant-numeric: tabular-nums;
+}
+
+.player-time-current {
+  min-width: 4ch;
+  font-weight: var(--weight-medium);
+}
+
+.player-time-total {
+  color: var(--color-secondary-label);
+}
+
+.player-speed {
+  flex: none;
+  height: 30px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-13);
+  font-weight: var(--weight-medium);
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-row);
+}
+
+.player-message {
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+/* waveform slider: bars grow from the middle, played bars are blue */
+.player-waveform {
+  flex: 1;
+  min-width: 120px;
+  height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.player-waveform-bars {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  height: 100%;
+}
+
+.player-waveform-bar {
+  flex: 0 0 3px;
+  min-height: 3px;
+  background: var(--color-blue-soft);
+  border-radius: 1.5px;
+  pointer-events: none;
+}
+
+.player-waveform-bar.is-played {
+  background: var(--color-blue);
+}
+
+/* placeholder bars until real peaks exist, at the waveform pending opacity */
+.player-waveform.is-pending .player-waveform-bar {
+  opacity: 0.3;
+}
+
+.player-waveform.is-pending .player-waveform-bar.is-played {
+  opacity: 1;
+}
+
+.player-waveform[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* a narrow column puts the waveform on its own row under the buttons */
+@container (max-width: 560px) {
+  .player-waveform {
+    flex-basis: 100%;
+    order: 1;
+  }
+}
+
+/* failed transcription */
+.recording-failed {
+  margin: 0 var(--content-padding);
+  padding: var(--space-4) 18px;
+  background: var(--color-grouped);
+  border-radius: var(--radius-card);
+}
+
+.recording-failed-message {
+  color: var(--color-red-text);
+}

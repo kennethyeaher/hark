@@ -6,21 +6,23 @@ import { renderNotFound } from '../pages/not-found.js'
 import { renderSidebar, setSidebarActive } from '../components/sidebar.js'
 import { destroyTopbar, renderTopbar, setSearchQuery } from '../components/topbar.js'
 import { getView, subscribeToView } from './view.js'
+import { getPageHooks, leavePage } from './page-hooks.js'
 import { renderHome } from '../pages/home.js'
 import { renderCourse } from '../pages/course.js'
 import { renderNewRecordingSheet } from '../pages/new-recording.js'
 import { renderTranscribing } from '../pages/transcribing.js'
+import { renderRecording } from '../pages/recording.js'
 
 // pages built so far, keyed by route name
 const pageRenderers = {
   home: renderHome,
   course: renderCourse,
   transcribe: renderTranscribing,
+  recording: renderRecording,
 }
 
 // titles for routes whose pages arrive in later milestones
 const placeholderTitles = {
-  recording: 'Recording',
   recordings: 'Recordings',
   notes: 'Notes',
   starred: 'Starred',
@@ -35,7 +37,8 @@ const homeRoute = { name: 'home', params: {}, query: {} }
  * build the page element for a route.
  * @param {{ name: string, params: Record<string, string>, query: Record<string, string> }} route parsed route
  * @param {{ courses: object[], recordings: object[], onLoadSamples?: () => Promise<void>,
- *   navigate: (hash: string) => void }} data app data and actions passed to built pages
+ *   navigate: (hash: string) => void, canGoBack?: boolean }} data app data and actions passed
+ *   to built pages, and whether an earlier page is in this tab's history
  * @returns {HTMLElement} the page to show in the content area
  */
 function renderPage(route, data) {
@@ -132,6 +135,8 @@ export function mountApp(
   layout.topbarSlot.append(topbar)
   root.replaceChildren(layout.shell)
   let currentRoute = null
+  // the page on screen, so it can be told when it leaves or updated in place
+  let currentPage = null
   let hasShownPage = false
   const data = { courses, recordings, onLoadSamples, navigate }
   // the open New recording sheet, the route that opened it, and the hash of the page under it
@@ -144,8 +149,11 @@ export function mountApp(
    * @returns {HTMLElement} the page that was rendered
    */
   function renderBackground(route) {
+    leavePage(currentPage)
     currentRoute = route
-    const page = renderPage(route, data)
+    // Back on the Recording page uses history only when the app showed a page before it
+    const page = renderPage(route, { ...data, canGoBack: hasShownPage })
+    currentPage = page
     layout.content.replaceChildren(page)
     setSearchQuery(topbar, route.name === 'search' ? (route.query.q ?? '') : '')
     return page
@@ -223,7 +231,9 @@ export function mountApp(
    * @returns {void}
    */
   function redrawForView() {
-    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
+    if (!currentRoute || getPageHooks(currentPage).onData) return
+    currentPage = renderPage(currentRoute, data)
+    layout.content.replaceChildren(currentPage)
   }
   const stopViewUpdates = subscribeToView(redrawForView)
 
@@ -247,7 +257,14 @@ export function mountApp(
     const nextSidebar = renderSidebar({ courses: data.courses, activeRoute })
     sidebar.replaceWith(nextSidebar)
     sidebar = nextSidebar
-    if (currentRoute) layout.content.replaceChildren(renderPage(currentRoute, data))
+    // a page that updates itself in place keeps its state, such as audio that is playing
+    const { onData } = getPageHooks(currentPage)
+    if (onData) onData(data)
+    else if (currentRoute) {
+      leavePage(currentPage)
+      currentPage = renderPage(currentRoute, data)
+      layout.content.replaceChildren(currentPage)
+    }
 
     // the old focused element may be gone, so find its rebuilt copy or fall back to the content
     restoreFocus(layout.sidebarSlot, sidebarFocus, layout.content)
@@ -263,6 +280,8 @@ export function mountApp(
   function stopRouter() {
     stopListening()
     closeSheet()
+    leavePage(currentPage)
+    currentPage = null
     stopViewUpdates()
     destroyTopbar(topbar)
   }

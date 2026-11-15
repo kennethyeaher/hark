@@ -13,6 +13,7 @@ const shapeColors = {
   pink: '#E8325B',
   green: '#1E8E3E',
   red: '#D93025',
+  'blue soft': '#5A8CE8',
 }
 const textColors = {
   indigo: '#5E5CE6',
@@ -81,6 +82,10 @@ describe('tokens.css', () => {
       expect(readToken(`course-${name}`)?.toLowerCase()).toBe(shapeColors[name].toLowerCase())
       expect(readToken(`course-${name}-text`)?.toLowerCase()).toBe(textColors[name].toLowerCase())
     }
+  })
+
+  it('uses the checked soft blue for unplayed waveform bars', () => {
+    expect(readToken('color-blue-soft')?.toLowerCase()).toBe(shapeColors['blue soft'].toLowerCase())
   })
 
   it('uses the approved status text values', () => {
