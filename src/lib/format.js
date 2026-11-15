@@ -46,6 +46,34 @@ export function formatDuration(seconds) {
 }
 
 /**
+ * format a length in seconds down to the second, such as `2 hr 00 min 20 s`, `48 min 05 s`, or
+ * `35 s`. leading units that are zero are left out.
+ * @param {number} seconds duration in seconds, zero or more
+ * @returns {string} the formatted duration
+ * @throws {TypeError} when seconds is not a number or is NaN
+ * @throws {RangeError} when seconds is negative or infinite
+ */
+export function formatExactDuration(seconds) {
+  if (typeof seconds !== 'number' || Number.isNaN(seconds)) {
+    throw new TypeError(`seconds must be a number, got ${String(seconds)}`)
+  }
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new RangeError(`seconds must be finite and not negative, got ${seconds}`)
+  }
+
+  // round to whole seconds first so 59.6 s carries into 1 min 00 s
+  const totalSeconds = Math.round(seconds)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const remainder = totalSeconds % 60
+  const pad = (value) => String(value).padStart(2, '0')
+
+  if (hours > 0) return `${hours} hr ${pad(minutes)} min ${pad(remainder)} s`
+  if (minutes > 0) return `${minutes} min ${pad(remainder)} s`
+  return `${remainder} s`
+}
+
+/**
  * check that a value is a Date holding a real time.
  * @param {unknown} value value to check
  * @returns {boolean} true when value is a valid Date

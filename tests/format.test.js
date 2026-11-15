@@ -3,6 +3,7 @@ import {
   assertCourse,
   courseColors,
   formatDuration,
+  formatExactDuration,
   formatRecordingCount,
   formatRelativeDate,
 } from '../src/lib/format.js'
@@ -37,6 +38,32 @@ describe('formatDuration', () => {
   it('throws for negative or infinite values', () => {
     expect(() => formatDuration(-1)).toThrow(RangeError)
     expect(() => formatDuration(Infinity)).toThrow(RangeError)
+  })
+})
+
+describe('formatExactDuration', () => {
+  it('formats hours, minutes, and seconds', () => {
+    expect(formatExactDuration(7220)).toBe('2 hr 00 min 20 s')
+    expect(formatExactDuration(3600)).toBe('1 hr 00 min 00 s')
+    expect(formatExactDuration(2885)).toBe('48 min 05 s')
+    expect(formatExactDuration(35)).toBe('35 s')
+  })
+
+  it('rounds to whole seconds before splitting', () => {
+    expect(formatExactDuration(59.6)).toBe('1 min 00 s')
+    expect(formatExactDuration(59.4)).toBe('59 s')
+    expect(formatExactDuration(3599.6)).toBe('1 hr 00 min 00 s')
+  })
+
+  it('formats zero', () => {
+    expect(formatExactDuration(0)).toBe('0 s')
+  })
+
+  it('throws for invalid input', () => {
+    expect(() => formatExactDuration('60')).toThrow(TypeError)
+    expect(() => formatExactDuration(NaN)).toThrow(TypeError)
+    expect(() => formatExactDuration(-1)).toThrow(RangeError)
+    expect(() => formatExactDuration(Infinity)).toThrow(RangeError)
   })
 })
 

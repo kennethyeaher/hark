@@ -445,9 +445,7 @@ describe('unsupported files', () => {
     actions.readAudioDuration.mockResolvedValueOnce(3 * 3600 + 1200)
     const sheet = renderSheet()
     await pickAny(sheet, makeFile('marathon.m4a'))
-    expect(fileErrorText(sheet)).toBe(
-      'marathon.m4a is 3 hr 20 min long. Hark takes recordings up to 2 hours.'
-    )
+    expect(fileErrorText(sheet)).toBe('This file is 3 hr 20 min 00 s long. The limit is 2 hours.')
     expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
     expect(sheet.querySelector('.sheet-estimate').textContent).toBe(
       'Pick a file to see how long it will take.'
@@ -458,10 +456,15 @@ describe('unsupported files', () => {
     actions.readAudioDuration.mockResolvedValueOnce(2 * 3600 + 60)
     const sheet = renderSheet()
     await pickAny(sheet, makeFile('seminar.m4a'))
-    expect(fileErrorText(sheet)).toBe(
-      'seminar.m4a is 2 hr 01 min long. Hark takes recordings up to 2 hours.'
-    )
+    expect(fileErrorText(sheet)).toBe('This file is 2 hr 01 min 00 s long. The limit is 2 hours.')
     expect(sheet.querySelector('.sheet-start').disabled).toBe(true)
+  })
+
+  it('shows the exact length for a file a few seconds over', async () => {
+    actions.readAudioDuration.mockResolvedValueOnce(7220)
+    const sheet = renderSheet()
+    await pickAny(sheet, makeFile('seminar.m4a'))
+    expect(fileErrorText(sheet)).toBe('This file is 2 hr 00 min 20 s long. The limit is 2 hours.')
   })
 
   it('accepts a recording of exactly 2 hours', async () => {
