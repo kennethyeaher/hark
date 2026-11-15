@@ -561,6 +561,21 @@ describe('Recording page rail', () => {
     )
   })
 
+  it('saves a pending note when the tab is hidden', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.notes-field')).not.toBeNull())
+    const field = page.querySelector('.notes-field')
+    field.value = 'Typed just before closing'
+    field.dispatchEvent(new Event('input'))
+    window.dispatchEvent(new Event('pagehide'))
+    await vi.waitFor(() =>
+      expect(services.saveNote).toHaveBeenCalledWith({
+        recordingId: 'week9',
+        body: 'Typed just before closing',
+      })
+    )
+  })
+
   it('starts empty when the recording has no note', async () => {
     const services = createServices({ getNote: vi.fn(async () => undefined) })
     const { page } = mount({ services })

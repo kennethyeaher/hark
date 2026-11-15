@@ -81,7 +81,8 @@ export function renderNotesPanel({ initialBody, onSave, delayMs = autosaveDelayM
     element,
 
     /**
-     * save a pending change now instead of waiting for the pause.
+     * save a pending change now instead of waiting for the pause. a note whose last save failed
+     * is not retried here; the next edit tries again.
      * @returns {Promise<void>} resolves once nothing is left to save
      */
     flush() {

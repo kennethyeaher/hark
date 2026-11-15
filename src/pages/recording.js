@@ -308,7 +308,13 @@ export function renderRecording(
     })
     slot.removeAttribute('aria-busy')
     slot.replaceChildren(panel.element)
-    cleanups.push(() => panel.flush())
+    // closing the tab inside the autosave pause would drop the last words, so save them then too
+    const saveOnHide = () => panel.flush()
+    window.addEventListener('pagehide', saveOnHide)
+    cleanups.push(() => {
+      window.removeEventListener('pagehide', saveOnHide)
+      panel.flush()
+    })
   }
 
   /**
