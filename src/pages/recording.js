@@ -5,11 +5,16 @@ import { announce } from '../lib/announce.js'
 import { setPageHooks } from '../app/page-hooks.js'
 import { renderRecordingHeader } from '../components/recording-header.js'
 import { renderPlayerBar } from '../components/player-bar.js'
+import { renderTranscriptList } from '../components/transcript-list.js'
+import { renderTranscriptToolbar } from '../components/transcript-toolbar.js'
 import { renderNotFound } from './not-found.js'
 import { getRecording, setRecordingStarred } from '../data/recordings.js'
 import { getAudio, saveAudioPeaks } from '../data/audio.js'
+import { listSegmentsForRecording } from '../data/segments.js'
+import { listMomentsForRecording } from '../data/moments.js'
 import { createPlayer } from '../player/player.js'
 import { readSavedRate, saveRate } from '../player/saved-rate.js'
+import { findActiveSegmentIndex } from '../player/active-segment.js'
 import { buildPeaks } from '../audio/peaks.js'
 import { decodeAudioFile } from '../transcription/decode.js'
 import { peakBarCount } from '../transcription/jobs.js'
@@ -23,6 +28,8 @@ const defaultServices = {
   setRecordingStarred,
   getAudio,
   saveAudioPeaks,
+  listSegmentsForRecording,
+  listMomentsForRecording,
   createPlayer,
   decodeAudio: decodeAudioFile,
   buildPeaks,
@@ -61,6 +68,28 @@ function goBack(canGoBack, courseHash, navigate) {
 }
 
 /**
+ * check whether the user asked the system for less motion.
+ * @returns {boolean} true when smooth scrolling should be skipped
+ */
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+}
+
+/**
+ * scroll a row to the middle of the window when it is hidden under the sticky player or below
+ * the fold. a row that is already in view is left alone, so reading is not interrupted.
+ * @param {HTMLElement} row the row to show
+ * @param {HTMLElement} controls the sticky player and toolbar above the transcript
+ * @returns {void}
+ */
+function scrollRowIntoView(row, controls) {
+  const box = row.getBoundingClientRect()
+  const topEdge = controls.getBoundingClientRect().bottom
+  if (box.top >= topEdge && box.bottom <= window.innerHeight) return
+  row.scrollIntoView?.({ block: 'center', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
+}
+
+/**
  * render the Recording page. a recording still in the queue or transcribing goes to its
  * Transcribing card, a failed one shows why, and an unknown id shows the not found page.
  * recordings in Trash are read straight from the store, since the library leaves them out.
@@ -89,6 +118,31 @@ export function renderRecording(
   // set once the page is replaced, so late reads and saves do not touch a page that is gone
   let hasLeft = false
   const cleanups = []
+  // the player once its audio loads. without audio, the page still keeps a position, so clicking
+  // a row highlights it and a moment lands at that time
+  let player = null
+  let positionSeconds = 0
+  const timeListeners = new Set()
+
+  /**
+   * tell every part of the page the playback position.
+   * @param {number} seconds the position
+   * @returns {void}
+   */
+  function showPosition(seconds) {
+    positionSeconds = seconds
+    for (const listener of timeListeners) listener(seconds)
+  }
+
+  /**
+   * seek the player, or move the stored position when there is no audio.
+   * @param {number} seconds the target
+   * @returns {void}
+   */
+  function seekTo(seconds) {
+    if (player) player.seek(seconds)
+    else showPosition(seconds)
+  }
 
   /**
    * release the player and anything else this page started, once.
@@ -164,12 +218,88 @@ export function renderRecording(
       return
     }
 
-    const main = createElement('div', { className: 'recording-main' })
+    const controls = createElement('div', { className: 'recording-controls' })
+    const transcriptSlot = createElement('div', {
+      className: 'transcript-slot',
+      'aria-busy': 'true',
+    })
+    const main = createElement('div', { className: 'recording-main' }, [controls, transcriptSlot])
     page.replaceChildren(
       header.element,
       createElement('div', { className: 'recording-body' }, [main])
     )
-    mountPlayer(recording, main)
+    mountPlayer(recording, controls)
+    mountTranscript(controls, transcriptSlot)
+  }
+
+  /**
+   * load the segments and moments, then show the transcript and keep it in step with playback.
+   * @param {HTMLElement} controls the sticky area that gets the toolbar
+   * @param {HTMLElement} slot where the transcript goes
+   * @returns {Promise<void>} resolves once the transcript shows or the failure is shown
+   */
+  async function mountTranscript(controls, slot) {
+    let segments
+    let moments
+    try {
+      ;[segments, moments] = await Promise.all([
+        services.listSegmentsForRecording(id),
+        services.listMomentsForRecording(id),
+      ])
+    } catch (error) {
+      if (hasLeft) return
+      slot.removeAttribute('aria-busy')
+      slot.replaceChildren(
+        createElement('p', {
+          className: 'transcript-empty',
+          role: 'alert',
+          text: `The transcript could not be read: ${error.message}`,
+        })
+      )
+      return
+    }
+    if (hasLeft) return
+    slot.removeAttribute('aria-busy')
+    if (segments.length === 0) {
+      slot.replaceChildren(
+        createElement('p', {
+          className: 'transcript-empty',
+          text: 'No speech was found in this recording.',
+        })
+      )
+      return
+    }
+
+    let isAutoScrollOn = true
+    let lastIndex = -1
+    const list = renderTranscriptList({ segments, onSeek: seekTo })
+    list.setMoments(moments)
+    const toolbar = renderTranscriptToolbar({
+      isAutoScrollOn,
+      onAutoScroll: (isOn) => {
+        isAutoScrollOn = isOn
+        const row = list.getRow(lastIndex)
+        if (isOn && row) scrollRowIntoView(row, controls)
+      },
+    })
+    controls.append(toolbar.element)
+    slot.replaceChildren(list.element)
+
+    /**
+     * move the highlight only when the playing segment changes.
+     * @param {number} seconds the position
+     * @returns {void}
+     */
+    const handleTime = (seconds) => {
+      const index = findActiveSegmentIndex(segments, seconds)
+      if (index === lastIndex) return
+      lastIndex = index
+      const row = list.setActiveIndex(index)
+      if (row && isAutoScrollOn) scrollRowIntoView(row, controls)
+    }
+    timeListeners.add(handleTime)
+    cleanups.push(() => timeListeners.delete(handleTime))
+    handleTime(positionSeconds)
   }
 
   /**
@@ -194,12 +324,12 @@ export function renderRecording(
   /**
    * add the player card, then load the audio. without audio the controls stay off and say why.
    * @param {object} recording the recording
-   * @param {HTMLElement} main the column that holds the player and transcript
+   * @param {HTMLElement} controls the sticky area above the transcript
    * @returns {Promise<void>} resolves once the audio is loaded or found missing
    */
-  async function mountPlayer(recording, main) {
+  async function mountPlayer(recording, controls) {
     const slot = createElement('div', { className: 'player-slot', 'aria-busy': 'true' })
-    main.prepend(slot)
+    controls.prepend(slot)
     let audio
     try {
       audio = await services.getAudio(id)
@@ -226,7 +356,7 @@ export function renderRecording(
       return
     }
 
-    const player = services.createPlayer(audio.blob)
+    player = services.createPlayer(audio.blob)
     const startRate = services.readSavedRate()
     player.setRate(startRate)
     const bar = renderPlayerBar({
@@ -243,7 +373,10 @@ export function renderRecording(
       },
     })
     slot.replaceChildren(bar.element)
-    const unsubscribe = player.subscribe((state) => bar.update(state))
+    const unsubscribe = player.subscribe((state) => {
+      bar.update(state)
+      if (state.currentTime !== positionSeconds) showPosition(state.currentTime)
+    })
     bar.update(player.getState())
     cleanups.push(unsubscribe, () => player.destroy(), bar.destroy)
 

@@ -4,7 +4,6 @@
 .page-recording {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
   margin: calc(-1 * var(--space-3)) calc(-1 * var(--content-padding)) calc(-1 * var(--space-7));
   min-height: calc(100dvh - 72px);
 }
@@ -134,6 +133,18 @@
   min-width: 0;
   padding: 0 var(--content-padding) var(--space-7);
   container-type: inline-size;
+}
+
+/* the player and toolbar stay at the top while the transcript scrolls under them */
+.recording-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 0 var(--space-2);
+  background: var(--color-background);
 }
 
 /* player card */
@@ -287,4 +298,119 @@
 
 .recording-failed-message {
   color: var(--color-red-text);
+}
+
+/* transcript toolbar: find on the left, then the switch and Edit */
+.transcript-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.transcript-autoscroll {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+/* a switch: the thumb sits right and the track turns blue when on */
+.switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 34px;
+  height: 20px;
+  padding: 2px;
+  background: var(--color-secondary-label);
+  border: 0;
+  border-radius: 10px;
+}
+
+.switch[aria-checked='true'] {
+  justify-content: flex-end;
+  background: var(--color-blue);
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-on-blue);
+  border-radius: 8px;
+}
+
+/* transcript rows: time on the left, text, then any moment dots */
+.transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 9px 12px;
+  color: var(--color-label);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+}
+
+.transcript-row:hover {
+  background: var(--color-grouped);
+}
+
+.transcript-row.is-active {
+  background: var(--color-blue-tint);
+}
+
+.transcript-time {
+  flex: none;
+  width: 50px;
+  padding-top: 3px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.transcript-row.is-active .transcript-time {
+  color: var(--color-blue);
+}
+
+.transcript-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-15);
+  line-height: 23px;
+}
+
+.transcript-moments {
+  display: flex;
+  flex: none;
+  gap: var(--space-1);
+  padding-top: 6px;
+}
+
+.transcript-moments:empty {
+  display: none;
+}
+
+.transcript-moment-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+.transcript-empty {
+  padding: var(--space-4) 12px;
+  color: var(--color-secondary-label);
 }

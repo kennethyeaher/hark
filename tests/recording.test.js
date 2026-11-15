@@ -15,6 +15,15 @@ const baseRecording = {
   errorMessage: null,
 }
 
+const segments = [
+  { id: 's0', index: 0, startSeconds: 724, endSeconds: 758, text: 'So when we talk about coding.' },
+  { id: 's1', index: 1, startSeconds: 758, endSeconds: 795, text: 'A lot of students jump ahead.' },
+  { id: 's2', index: 2, startSeconds: 795, endSeconds: 832, text: 'Let me show you an example.' },
+]
+const moments = [
+  { id: 'm0', recordingId: 'week9', atSeconds: 760, label: 'Exam hint', color: 'orange' },
+]
+
 /**
  * build a fake player that records calls and lets the test push state.
  * @returns {object} the fake, with a push function
@@ -57,6 +66,8 @@ function createServices(overrides = {}) {
     setRecordingStarred: vi.fn(async (id, isStarred) => ({ ...baseRecording, isStarred })),
     getAudio: vi.fn(async () => ({ recordingId: 'week9', blob: new Blob(['x']), peaks: [0.5, 1] })),
     saveAudioPeaks: vi.fn(async () => {}),
+    listSegmentsForRecording: vi.fn(async () => segments),
+    listMomentsForRecording: vi.fn(async () => moments),
     createPlayer: vi.fn(() => player),
     decodeAudio: vi.fn(async () => ({ samples: new Float32Array([0, 0.5]), durationSeconds: 1 })),
     buildPeaks: vi.fn(() => [0.3, 0.6, 1]),
@@ -267,5 +278,83 @@ describe('Recording page player', () => {
     await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
     leavePage(page)
     expect(services.player.destroy).toHaveBeenCalled()
+  })
+})
+
+describe('Recording page transcript', () => {
+  it('lists every segment with its time and the moment dots', async () => {
+    const { page } = mount()
+    await vi.waitFor(() => expect(page.querySelectorAll('.transcript-row')).toHaveLength(3))
+    const rows = page.querySelectorAll('.transcript-row')
+    expect(rows[0].querySelector('.transcript-time').textContent).toBe('12:04')
+    expect(rows[1].querySelector('.transcript-moment-dot')).not.toBeNull()
+    expect(rows[1].textContent).toContain('moment Exam hint')
+    expect(rows[0].querySelector('.transcript-moment-dot')).toBeNull()
+  })
+
+  it('seeks when a row is clicked and follows the playing segment', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelectorAll('.transcript-row')).toHaveLength(3))
+    await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
+    const rows = page.querySelectorAll('.transcript-row')
+    rows[2].click()
+    expect(services.player.seek).toHaveBeenCalledWith(795)
+
+    services.player.push({ currentTime: 770 })
+    expect(rows[1].classList.contains('is-active')).toBe(true)
+    expect(rows[1].getAttribute('aria-current')).toBe('true')
+    services.player.push({ currentTime: 800 })
+    expect(rows[1].classList.contains('is-active')).toBe(false)
+    expect(rows[2].classList.contains('is-active')).toBe(true)
+    // more than a second past the last segment is a gap, so nothing is highlighted
+    services.player.push({ currentTime: 900 })
+    expect(page.querySelector('.transcript-row.is-active')).toBeNull()
+  })
+
+  it('keeps the playing row in view while auto scroll is on, and stops when it is off', async () => {
+    const scrolled = []
+    const original = Element.prototype.scrollIntoView
+    Element.prototype.scrollIntoView = function scrollIntoView() {
+      scrolled.push(this)
+    }
+    try {
+      const { page, services } = mount()
+      await vi.waitFor(() => expect(page.querySelector('.switch')).not.toBeNull())
+      await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
+      const rows = page.querySelectorAll('.transcript-row')
+      // jsdom has no layout, so every row counts as out of view and gets scrolled to
+      rows.forEach((row) => {
+        row.getBoundingClientRect = () => ({ top: 2000, bottom: 2040 })
+      })
+      services.player.push({ currentTime: 770 })
+      expect(scrolled.at(-1)).toBe(rows[1])
+
+      const toggle = page.querySelector('.switch')
+      expect(toggle.getAttribute('aria-checked')).toBe('true')
+      toggle.click()
+      expect(toggle.getAttribute('aria-checked')).toBe('false')
+      services.player.push({ currentTime: 800 })
+      expect(scrolled.at(-1)).toBe(rows[1])
+    } finally {
+      Element.prototype.scrollIntoView = original
+    }
+  })
+
+  it('highlights a clicked row on a sample with no audio', async () => {
+    const services = createServices({ getAudio: vi.fn(async () => undefined) })
+    const { page } = mount({ services })
+    await vi.waitFor(() => expect(page.querySelectorAll('.transcript-row')).toHaveLength(3))
+    page.querySelectorAll('.transcript-row')[2].click()
+    expect(page.querySelectorAll('.transcript-row')[2].classList.contains('is-active')).toBe(true)
+  })
+
+  it('says so when no speech was found', async () => {
+    const services = createServices({ listSegmentsForRecording: vi.fn(async () => []) })
+    const { page } = mount({ services })
+    await vi.waitFor(() =>
+      expect(page.querySelector('.transcript-empty')?.textContent).toBe(
+        'No speech was found in this recording.'
+      )
+    )
   })
 })
