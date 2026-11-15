@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { dataEvents } from '../../src/data/events.js'
 import { useFreshDatabase } from './fresh-database.js'
 import { saveCourse } from '../../src/data/courses.js'
 import { getRecording, saveRecording } from '../../src/data/recordings.js'
@@ -8,6 +9,7 @@ import {
   listSegmentsForRecording,
   normalizeSegment,
   saveSegments,
+  updateSegmentTexts,
 } from '../../src/data/segments.js'
 
 beforeEach(async () => {
@@ -140,5 +142,73 @@ describe('saveSegments with status changes', () => {
     )
     expect(await listSegmentsForRecording('lecture17')).toEqual([])
     expect((await getRecording('lecture17')).progress).toBe(0)
+  })
+})
+
+describe('updateSegmentTexts', () => {
+  beforeEach(async () => {
+    await saveSegments('lecture17', [
+      makeSegment({ id: 'a', index: 0, text: 'First.' }),
+      makeSegment({ id: 'b', index: 1, startSeconds: 4.5, endSeconds: 9, text: 'Second.' }),
+    ])
+    await saveSegments('lecture16', [makeSegment({ id: 'other', recordingId: 'lecture16' })])
+  })
+
+  it('changes only the text, trimmed, in one write, and announces segments', async () => {
+    const events = []
+    const listener = (event) => events.push(event.detail)
+    dataEvents.addEventListener('change', listener)
+    const updated = await updateSegmentTexts('lecture17', [
+      { id: 'b', text: '  Second, fixed.  ' },
+      { id: 'a', text: 'First, fixed.' },
+    ])
+    dataEvents.removeEventListener('change', listener)
+    expect(updated.map((segment) => segment.id)).toEqual(['b', 'a'])
+    expect(events).toEqual([{ store: 'segments', id: 'lecture17' }])
+    expect(await getSegment('b')).toEqual(
+      makeSegment({ id: 'b', index: 1, startSeconds: 4.5, endSeconds: 9, text: 'Second, fixed.' })
+    )
+    expect((await getSegment('a')).text).toBe('First, fixed.')
+  })
+
+  it('does nothing for an empty list', async () => {
+    const events = []
+    const listener = (event) => events.push(event.detail)
+    dataEvents.addEventListener('change', listener)
+    expect(await updateSegmentTexts('lecture17', [])).toEqual([])
+    dataEvents.removeEventListener('change', listener)
+    expect(events).toEqual([])
+  })
+
+  it('rejects bad changes before writing', async () => {
+    await expect(updateSegmentTexts('lecture17', 'a')).rejects.toThrow(/must be an array/)
+    await expect(updateSegmentTexts('lecture17', [{ id: 'a', text: '   ' }])).rejects.toThrow(
+      /text must be a non empty/
+    )
+    await expect(updateSegmentTexts('lecture17', [{ id: '', text: 'x' }])).rejects.toThrow(/id/)
+    await expect(
+      updateSegmentTexts('lecture17', [
+        { id: 'a', text: 'one' },
+        { id: 'a', text: 'two' },
+      ])
+    ).rejects.toThrow(/appears twice/)
+    expect((await getSegment('a')).text).toBe('First.')
+  })
+
+  it('writes nothing when one id is unknown or from another recording', async () => {
+    await expect(
+      updateSegmentTexts('lecture17', [
+        { id: 'a', text: 'changed' },
+        { id: 'missing', text: 'x' },
+      ])
+    ).rejects.toThrow(/does not exist/)
+    await expect(
+      updateSegmentTexts('lecture17', [
+        { id: 'a', text: 'changed' },
+        { id: 'other', text: 'x' },
+      ])
+    ).rejects.toThrow(/belongs to lecture16/)
+    expect((await getSegment('a')).text).toBe('First.')
+    expect((await getSegment('other')).text).toBe('Welcome back to week ten.')
   })
 })

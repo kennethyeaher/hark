@@ -131,6 +131,55 @@ export async function saveSegments(recordingId, segments, statusChanges) {
 }
 
 /**
+ * change the text of some segments of one recording in a single transaction. times, index,
+ * and ids stay as they are, and the new text is trimmed. an empty list does nothing and
+ * announces nothing.
+ * @param {string} recordingId recording the segments belong to
+ * @param {{ id: string, text: string }[]} changes the new text for each segment to edit
+ * @returns {Promise<object[]>} the changed segments as stored, in the order given
+ * @throws {TypeError} when changes is not an array, an entry is not an object, an id or text
+ *   is blank, an id appears twice, a segment does not exist, or it belongs to another
+ *   recording. nothing is written in any of these cases
+ */
+export async function updateSegmentTexts(recordingId, changes) {
+  assertText(recordingId, 'recordingId')
+  if (!Array.isArray(changes)) {
+    throw new TypeError(`changes for ${recordingId} must be an array, got ${String(changes)}`)
+  }
+  // validate everything before the transaction opens, so a bad change writes nothing
+  const seen = new Set()
+  const cleaned = changes.map((change) => {
+    assertObject(change, 'segment change')
+    assertText(change.id, 'segment change id')
+    assertText(change.text, `segment ${change.id} text`)
+    if (seen.has(change.id)) {
+      throw new TypeError(`segment ${change.id} appears twice in the changes`)
+    }
+    seen.add(change.id)
+    return { id: change.id, text: change.text.trim() }
+  })
+  if (cleaned.length === 0) return []
+
+  const database = await openDatabase()
+  const transaction = database.transaction('segments', 'readwrite')
+  const current = await Promise.all(cleaned.map((change) => transaction.store.get(change.id)))
+  const problem = current.findIndex((segment) => !segment || segment.recordingId !== recordingId)
+  if (problem !== -1) {
+    await abortTransaction(transaction)
+    const { id } = cleaned[problem]
+    throw new TypeError(
+      current[problem]
+        ? `segment ${id} belongs to ${current[problem].recordingId}, not recording ${recordingId}`
+        : `segment ${id} does not exist`
+    )
+  }
+  const updated = current.map((segment, index) => ({ ...segment, text: cleaned[index].text }))
+  await Promise.all([...updated.map((segment) => transaction.store.put(segment)), transaction.done])
+  announceChange('segments', recordingId)
+  return updated
+}
+
+/**
  * remove every segment of a recording. a recording with no segments is left as it is.
  * @param {string} recordingId recording id
  * @returns {Promise<void>} resolves once the segments are gone

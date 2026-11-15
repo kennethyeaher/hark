@@ -200,6 +200,21 @@ export async function updateRecordingStatus(id, changes) {
 }
 
 /**
+ * star or unstar a recording.
+ * @param {string} id recording id
+ * @param {boolean} isStarred true to star it, false to remove the star
+ * @returns {Promise<object>} the changed recording
+ * @throws {TypeError} when isStarred is not true or false
+ * @throws {Error} when there is no recording with that id
+ */
+export function setRecordingStarred(id, isStarred) {
+  if (typeof isStarred !== 'boolean') {
+    throw new TypeError(`isStarred must be true or false, got ${String(isStarred)}`)
+  }
+  return updateRecording(id, (recording) => ({ ...recording, isStarred }))
+}
+
+/**
  * move a recording to Trash by setting deletedAt. its data stays until it is deleted forever.
  * @param {string} id recording id
  * @param {Date} [now] time to record as deletedAt
