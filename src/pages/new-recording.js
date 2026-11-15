@@ -1,7 +1,7 @@
 // the New recording sheet: pick an audio file, a course, and a model, then start transcribing
 
 import { createElement, createIcon } from '../lib/dom.js'
-import { courseColors, formatDuration } from '../lib/format.js'
+import { courseColors, formatDuration, formatExactDuration } from '../lib/format.js'
 import {
   buildRecordingTitle,
   describeAudioLimit,
@@ -481,7 +481,7 @@ export function renderNewRecordingSheet({
     if (durationSeconds === null) {
       state.fileError = `The length of ${file.name} could not be read. Try an MP3, WAV, M4A, or WebM file.`
     } else if (durationSeconds > maxAudioSeconds) {
-      state.fileError = `${file.name} is ${formatDuration(durationSeconds)} long. Hark takes recordings up to ${describeAudioLimit()}.`
+      state.fileError = `This file is ${formatExactDuration(durationSeconds)} long. The limit is ${describeAudioLimit()}.`
     } else {
       state.durationSeconds = durationSeconds
     }

@@ -4,7 +4,8 @@
 import { createTranscriptionClient } from './client.js'
 import { AudioDecodeError, decodeAudioFile } from './decode.js'
 import { estimateRemainingSeconds, estimateSeconds } from './estimate.js'
-import { getAudio } from '../data/audio.js'
+import { buildPeaks } from '../audio/peaks.js'
+import { getAudio, saveAudioPeaks } from '../data/audio.js'
 import {
   deleteRecordingForever,
   getRecording,
@@ -13,6 +14,9 @@ import {
 } from '../data/recordings.js'
 import { saveSegments } from '../data/segments.js'
 import { assertText } from '../data/validate.js'
+
+/** how many waveform bars are saved for each recording */
+export const peakBarCount = 120
 
 /** the message saved on a recording whose file the browser cannot decode */
 export const unreadableAudioMessage = 'This file could not be read as audio'
@@ -24,6 +28,7 @@ export const missingAudioMessage = 'The audio for this recording is missing'
 const storeFunctionNames = [
   'getRecording',
   'getAudio',
+  'saveAudioPeaks',
   'listRecordings',
   'updateRecordingStatus',
   'saveSegments',
@@ -170,6 +175,15 @@ export function createTranscriptionJobs({
         return
       }
       const { samples, durationSeconds } = await decode(audio.blob)
+      if (job.isCancelled) return
+      // the waveform is a nicety, so a failure here goes to reportError and the
+      // transcription carries on. a recording without peaks shows placeholder bars, and the
+      // Recording page builds the peaks once on a later visit
+      try {
+        await store.saveAudioPeaks(id, buildPeaks(samples, peakBarCount))
+      } catch (error) {
+        reportError(error)
+      }
       if (job.isCancelled) return
       await store.updateRecordingStatus(id, {
         status: 'transcribing',
@@ -372,6 +386,7 @@ const appJobs = createTranscriptionJobs({
   store: {
     getRecording,
     getAudio,
+    saveAudioPeaks,
     listRecordings,
     updateRecordingStatus,
     saveSegments,

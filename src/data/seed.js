@@ -12,6 +12,8 @@ import { announceChange } from './events.js'
 import { normalizeCourse } from './courses.js'
 import { normalizeRecording } from './recordings.js'
 import { normalizeNote } from './notes.js'
+import { normalizeSegment } from './segments.js'
+import { normalizeMoment } from './moments.js'
 
 const sampleCourses = [
   { id: 'hcim605', code: 'HCIM 605', name: 'Qualitative Research Methods', color: 'indigo' },
@@ -40,7 +42,7 @@ const starredIds = new Set(['week9-thematic-analysis', 'week6-ethics-and-consent
 const noteBodies = new Map([
   [
     'week9-thematic-analysis',
-    'Start with open codes, then group them into themes. Memo every merge.',
+    'Ask about NVivo vs a spreadsheet for the codebook\nCompare with Braun and Clarke six phases before Thursday',
   ],
   ['week8-interview-protocols', 'Pilot the protocol with one person first. Keep probes neutral.'],
   [
@@ -48,6 +50,57 @@ const noteBodies = new Map([
     'A good question is open, answerable with the data, and narrow enough.',
   ],
 ])
+
+// the Week 9 transcript from the Recording mock: start in seconds and text. each segment
+// ends where the next one starts, and the last one runs to 1030 seconds
+const week9Lines = [
+  [
+    724,
+    'So when we talk about thematic coding, the first pass is always descriptive. You are not interpreting yet, you are labeling what is literally in the transcript.',
+  ],
+  [
+    758,
+    'A lot of students jump to themes too early. Resist that. Your codebook should grow out of the data, not out of what you expected to find.',
+  ],
+  [
+    795,
+    'Let me show you an example from last semester. One team coded 24 interviews and ended up with 140 initial codes before collapsing them.',
+  ],
+  [
+    832,
+    'The collapsing step is where inter-rater reliability matters. Two people code the same three transcripts independently, then compare.',
+  ],
+  [
+    870,
+    'If your agreement is under about 80 percent, that is a signal the code definitions are ambiguous, not that one coder is wrong.',
+  ],
+  [
+    907,
+    'For your final projects, I want to see the codebook as an appendix. Include the code name, a one sentence definition, and one example quote.',
+  ],
+  [
+    949,
+    'Questions so far? Okay. Let us move to how you group codes into candidate themes, which is where the interpretive work starts.',
+  ],
+  [
+    986,
+    'A candidate theme is a pattern across codes, not a pile of them. Ask what story the codes tell together, and what does not fit.',
+  ],
+  [
+    1021,
+    'Take five minutes with a partner and group the codes from the handout. Write down one theme name and the codes under it.',
+  ],
+  [1064, 'Okay, let us hear from a few pairs. Which theme did you find hardest to name, and why?'],
+]
+const week9EndSeconds = 1090
+
+// moments from the Moments rail, each inside one of the segments above. the mock's yellow,
+// red, and green are not course colors, so they map to orange, pink, and teal
+const week9Moments = [
+  { id: 'week9-moment-exam-hint', atSeconds: 758, label: 'Exam hint', color: 'orange' },
+  { id: 'week9-moment-ask', atSeconds: 852, label: 'Ask about this', color: 'pink' },
+  { id: 'week9-moment-quote', atSeconds: 917, label: 'Good quote', color: 'teal' },
+]
 
 /**
  * get a time on a day before now, at a fixed hour, never later than now.
@@ -66,9 +119,10 @@ function dateBefore(now, daysBefore, hour) {
 }
 
 /**
- * build the sample courses, recordings, and notes as the store keeps them, with dates relative to now.
+ * build the sample courses, recordings, notes, and the Week 9 transcript and moments as the store keeps them, with dates relative to now.
  * @param {Date} [now] the current time, passed in so tests are stable
- * @returns {{ courses: object[], recordings: object[], notes: object[] }} rows ready to write
+ * @returns {{ courses: object[], recordings: object[], notes: object[], segments: object[],
+ *   moments: object[] }} rows ready to write
  * @throws {TypeError} when now is not a valid date
  */
 export function buildSampleLibrary(now = new Date()) {
@@ -95,20 +149,35 @@ export function buildSampleLibrary(now = new Date()) {
   const notes = [...noteBodies].map(([recordingId, body]) =>
     normalizeNote({ recordingId, body, updatedAt: now })
   )
-  return { courses, recordings, notes }
+  const recordingId = 'week9-thematic-analysis'
+  const segments = week9Lines.map(([startSeconds, text], index) =>
+    normalizeSegment({
+      id: `${recordingId}-${index}`,
+      recordingId,
+      index,
+      startSeconds,
+      endSeconds: week9Lines[index + 1]?.[0] ?? week9EndSeconds,
+      text,
+    })
+  )
+  const moments = week9Moments.map((moment) => normalizeMoment({ recordingId, ...moment }))
+  return { courses, recordings, notes, segments, moments }
 }
 
 /**
- * write the sample courses, recordings, and notes in one transaction, but only into an empty
+ * write the sample courses, recordings, notes, segments, and moments in one transaction, but only into an empty
  * library. a library with any course or recording, even one in Trash, is left as it is.
  * @param {Date} [now] the current time, passed in so tests are stable
  * @returns {Promise<boolean>} true when the samples were written, false when the library was not empty
  * @throws {Error} when the database cannot open or the write fails, in which case nothing is written
  */
 export async function seedSampleLibrary(now = new Date()) {
-  const { courses, recordings, notes } = buildSampleLibrary(now)
+  const { courses, recordings, notes, segments, moments } = buildSampleLibrary(now)
   const database = await openDatabase()
-  const transaction = database.transaction(['courses', 'recordings', 'notes'], 'readwrite')
+  const transaction = database.transaction(
+    ['courses', 'recordings', 'notes', 'segments', 'moments'],
+    'readwrite'
+  )
   const [courseCount, recordingCount] = await Promise.all([
     transaction.objectStore('courses').count(),
     transaction.objectStore('recordings').count(),
@@ -121,6 +190,8 @@ export async function seedSampleLibrary(now = new Date()) {
     ...courses.map((course) => transaction.objectStore('courses').put(course)),
     ...recordings.map((recording) => transaction.objectStore('recordings').put(recording)),
     ...notes.map((note) => transaction.objectStore('notes').put(note)),
+    ...segments.map((segment) => transaction.objectStore('segments').put(segment)),
+    ...moments.map((moment) => transaction.objectStore('moments').put(moment)),
     transaction.done,
   ])
   announceChange('library')

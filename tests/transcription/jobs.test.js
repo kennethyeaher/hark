@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useFreshDatabase } from '../data/fresh-database.js'
 import { saveCourse } from '../../src/data/courses.js'
-import { getAudio, saveAudio } from '../../src/data/audio.js'
+import { getAudio, saveAudio, saveAudioPeaks } from '../../src/data/audio.js'
 import {
   deleteRecordingForever,
   getRecording,
@@ -14,6 +14,7 @@ import { AudioDecodeError } from '../../src/transcription/decode.js'
 import {
   createTranscriptionJobs,
   missingAudioMessage,
+  peakBarCount,
   unreadableAudioMessage,
 } from '../../src/transcription/jobs.js'
 
@@ -124,6 +125,7 @@ beforeEach(async () => {
     store: {
       getRecording,
       getAudio,
+      saveAudioPeaks,
       listRecordings,
       deleteRecordingForever,
       updateRecordingStatus: async (id, changes) => {
@@ -256,6 +258,49 @@ describe('one job', () => {
     await waitFor(() => jobs.getJobState('lecture1').phase === 'failed')
     expect((await getRecording('lecture1')).errorMessage).toBe(missingAudioMessage)
     expect(decode).not.toHaveBeenCalled()
+  })
+
+  it('saves 120 waveform peaks from the decoded samples before transcription starts', async () => {
+    decode.mockResolvedValue({
+      samples: Float32Array.from({ length: 16000 }, (_, index) => Math.sin(index / 50)),
+      durationSeconds: 600,
+    })
+    await addRecording('lecture1')
+    await jobs.enqueueRecording('lecture1')
+    await waitFor(() => fake.calls.length === 1)
+    const audio = await getAudio('lecture1')
+    expect(audio.peaks).toHaveLength(peakBarCount)
+    expect(peakBarCount).toBe(120)
+    expect(Math.max(...audio.peaks)).toBe(1)
+  })
+
+  it('reports a peaks failure and still transcribes', async () => {
+    const reportError = vi.fn()
+    const failing = createTranscriptionJobs({
+      client: fake.client,
+      decode,
+      reportError,
+      store: {
+        getRecording,
+        getAudio,
+        listRecordings,
+        deleteRecordingForever,
+        updateRecordingStatus,
+        saveSegments,
+        saveAudioPeaks: async () => {
+          throw new Error('peaks storage is full')
+        },
+      },
+    })
+    await addRecording('lecture1')
+    await failing.enqueueRecording('lecture1')
+    await waitFor(() => fake.calls.length === 1)
+    expect(reportError).toHaveBeenCalledWith(
+      expect.objectContaining({ message: 'peaks storage is full' })
+    )
+    fake.calls[0].resolve(makeSegments(2))
+    await waitFor(() => failing.getJobState('lecture1').phase === 'done')
+    expect((await getRecording('lecture1')).status).toBe('transcribed')
   })
 
   it('stops the worker and fails when a chunk cannot be saved', async () => {

@@ -62,6 +62,18 @@ function silence(seconds) {
   return new Float32Array(Math.round(seconds * whisperSampleRate))
 }
 
+/**
+ * make loud samples of a given length, with a silent stretch from a given time on.
+ * @param {number} seconds audio length
+ * @param {number} [silentFromSeconds] where silence starts, defaults to never
+ * @returns {Float32Array} samples at 16 kHz
+ */
+function tone(seconds, silentFromSeconds = seconds) {
+  const samples = new Float32Array(Math.round(seconds * whisperSampleRate)).fill(0.2)
+  samples.fill(0, Math.round(silentFromSeconds * whisperSampleRate))
+  return samples
+}
+
 describe('createTranscriber', () => {
   it('posts download, ready, chunk, and done in order for a short file', async () => {
     const { transcriber, posted, loadPipeline } = setup()
@@ -177,6 +189,105 @@ describe('createTranscriber', () => {
     })
     expect(posted.at(-1).segments).toEqual([
       { index: 0, startSeconds: 0, endSeconds: 8, text: 'A person who is here.' },
+    ])
+  })
+
+  it('transcribes the tail again when whisper skipped loud audio at the end of a window', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    fakePipeline.mockResolvedValueOnce({
+      chunks: [{ timestamp: [0, 6], text: ' First part.' }],
+    })
+    fakePipeline.mockResolvedValueOnce({
+      chunks: [{ timestamp: [0.5, 3], text: ' The missing words.' }],
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 'job',
+      samples: tone(10),
+      modelKey: 'balanced',
+    })
+    expect(fakePipeline).toHaveBeenCalledTimes(2)
+    // the rerun gets the audio from where the last segment ended to the window end
+    expect(fakePipeline.mock.calls[1][0].length / whisperSampleRate).toBe(4)
+    expect(posted.at(-1).segments).toEqual([
+      { index: 0, startSeconds: 0, endSeconds: 6, text: 'First part.' },
+      { index: 1, startSeconds: 6.5, endSeconds: 9, text: 'The missing words.' },
+    ])
+  })
+
+  it('offsets rerun times by the window start and reruns each window once', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    // constant audio is equally quiet everywhere, so the cut lands 8 s early, at 292
+    fakePipeline.mockImplementation(async (samples) => {
+      const seconds = samples.length / whisperSampleRate
+      // every call stops 5 s short, so a rerun that also stops short must not trigger another
+      return { chunks: [{ timestamp: [0, seconds - 5], text: ` Words ${seconds}.` }] }
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 'job',
+      samples: tone(windowSeconds + 60),
+      modelKey: 'balanced',
+    })
+    // each of the 2 windows ran once and was rerun once, never more
+    expect(fakePipeline).toHaveBeenCalledTimes(4)
+    const starts = posted.at(-1).segments.map((segment) => segment.startSeconds)
+    // window 0 runs 0 to 292 and its tail starts at 287, window 1 runs 292 to 360 and its tail at 355
+    expect(starts).toEqual([0, 287, 292, 355])
+  })
+
+  it('does not rerun when the tail is short or silent', async () => {
+    const { transcriber, fakePipeline } = setup()
+    fakePipeline.mockResolvedValue({ chunks: [{ timestamp: [0, 6], text: ' Spoken.' }] })
+    // loud audio that ends 1.5 s after the last segment, then loud audio with a silent tail
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 1,
+      samples: tone(7.5),
+      modelKey: 'balanced',
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 2,
+      samples: tone(12, 6),
+      modelKey: 'balanced',
+    })
+    expect(fakePipeline).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not rerun a window that returned no segments', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    fakePipeline.mockResolvedValue({ chunks: [] })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 1,
+      samples: tone(20),
+      modelKey: 'balanced',
+    })
+    expect(fakePipeline).toHaveBeenCalledTimes(1)
+    expect(posted.at(-1)).toEqual({ type: 'done', jobId: 1, segments: [] })
+  })
+
+  it('drops a rerun repeat and collapses a rerun loop', async () => {
+    const { transcriber, posted, fakePipeline } = setup()
+    fakePipeline.mockResolvedValueOnce({
+      chunks: [{ timestamp: [0, 5], text: ' The data goes to the company servers.' }],
+    })
+    fakePipeline.mockResolvedValueOnce({
+      chunks: [
+        { timestamp: [0, 2], text: ' the data goes to the company servers' },
+        { timestamp: [2, 4], text: ' Is it is it is it done.' },
+      ],
+    })
+    await transcriber.handleMessage({
+      type: 'transcribe',
+      jobId: 1,
+      samples: tone(10),
+      modelKey: 'balanced',
+    })
+    expect(posted.at(-1).segments.map((segment) => segment.text)).toEqual([
+      'The data goes to the company servers.',
+      'Is it done.',
     ])
   })
 

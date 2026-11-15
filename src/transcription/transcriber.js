@@ -11,13 +11,15 @@
   only merged after the whole call ends, so it cannot give final segments part way through.
   windows can. whisper sometimes loops, so a short phrase repeated 3 or more times inside a
   segment collapses to one, and a segment that repeats the one before it word for word is dropped.
+  whisper also sometimes returns nothing for the end of a window, so when a window's last segment
+  stops well before its end and the rest is not silent, that tail is transcribed once more.
 */
 
 import { getModel } from './models.js'
 import { whisperSampleRate } from './decode.js'
 import { createDownloadTracker } from './progress.js'
 import { buildSegments, collapseRepeatedPhrases, dropRepeatedSegments } from './segments.js'
-import { findQuietCuts, planWindows } from './windows.js'
+import { findQuietCuts, findSkippedTail, planWindows } from './windows.js'
 
 /** nominal length of the audio one window owns, before its cut moves to a quiet moment */
 export const windowSeconds = 300
@@ -108,13 +110,38 @@ export function createTranscriber({ loadPipeline, post }) {
         Math.round(audioWindow.endSeconds * whisperSampleRate)
       )
       const output = await pipeline(audio, transcribeOptions)
-      // loops inside a segment collapse first, so a looped segment can still match its neighbor
       const windowSegments = buildSegments(output.chunks ?? [], {
         offsetSeconds: audioWindow.startSeconds,
         durationSeconds: audio.length / whisperSampleRate,
-      }).map((segment) => ({ ...segment, text: collapseRepeatedPhrases(segment.text) }))
+      })
+
+      // one more pass over a tail whisper skipped, at most once per window. the tail starts where
+      // the last segment ended and its times are offset from there.
+      const lastSegment = windowSegments.at(-1)
+      const tailStartSeconds = findSkippedTail(
+        audio,
+        lastSegment ? lastSegment.endSeconds - audioWindow.startSeconds : null,
+        { sampleRate: whisperSampleRate }
+      )
+      if (tailStartSeconds !== null) {
+        const tailOutput = await pipeline(
+          audio.subarray(Math.round(tailStartSeconds * whisperSampleRate)),
+          transcribeOptions
+        )
+        const tailSegments = buildSegments(tailOutput.chunks ?? [], {
+          offsetSeconds: audioWindow.startSeconds + tailStartSeconds,
+          durationSeconds: audio.length / whisperSampleRate - tailStartSeconds,
+        })
+        windowSegments.push(...tailSegments)
+      }
+
+      // loops inside a segment collapse first, so a looped segment can still match its neighbor
+      const cleanedSegments = windowSegments.map((segment) => ({
+        ...segment,
+        text: collapseRepeatedPhrases(segment.text),
+      }))
       // repeats are dropped across the whole transcript, so one that spans a window edge goes too
-      transcript = dropRepeatedSegments([...transcript, ...windowSegments])
+      transcript = dropRepeatedSegments([...transcript, ...cleanedSegments])
       post({ type: 'chunk', jobId, processedSeconds: audioWindow.endSeconds, segments: transcript })
     }
     post({ type: 'done', jobId, segments: transcript })

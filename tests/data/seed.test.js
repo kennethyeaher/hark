@@ -5,6 +5,8 @@ import { buildLibrary, loadLibrary } from '../../src/data/library.js'
 import { saveCourse } from '../../src/data/courses.js'
 import { listRecordings } from '../../src/data/recordings.js'
 import { listNotes } from '../../src/data/notes.js'
+import { listSegmentsForRecording } from '../../src/data/segments.js'
+import { listMomentsForRecording } from '../../src/data/moments.js'
 
 // a fixed afternoon so every sample date lands on a known day
 const now = new Date(2026, 9, 28, 15)
@@ -57,6 +59,38 @@ describe('buildSampleLibrary', () => {
   })
 })
 
+describe('the Week 9 sample transcript', () => {
+  it('has ten ordered segments from 12:04 with no gaps', () => {
+    const { segments } = buildSampleLibrary(now)
+    expect(segments).toHaveLength(10)
+    expect(segments[0].startSeconds).toBe(724)
+    segments.forEach((segment, index) => {
+      expect(segment.index).toBe(index)
+      expect(segment.recordingId).toBe('week9-thematic-analysis')
+      expect(segment.endSeconds).toBeGreaterThan(segment.startSeconds)
+      if (index > 0) expect(segment.startSeconds).toBe(segments[index - 1].endSeconds)
+    })
+  })
+
+  it('has three moments that each fall inside a segment, and one note with two lines', () => {
+    const { segments, moments, notes } = buildSampleLibrary(now)
+    expect(moments.map((moment) => [moment.label, moment.color])).toEqual([
+      ['Exam hint', 'orange'],
+      ['Ask about this', 'pink'],
+      ['Good quote', 'teal'],
+    ])
+    for (const moment of moments) {
+      const inside = segments.filter(
+        (segment) =>
+          segment.startSeconds <= moment.atSeconds && moment.atSeconds < segment.endSeconds
+      )
+      expect(inside).toHaveLength(1)
+    }
+    const note = notes.find((item) => item.recordingId === 'week9-thematic-analysis')
+    expect(note.body.split('\n')).toHaveLength(2)
+  })
+})
+
 describe('seedSampleLibrary', () => {
   beforeEach(useFreshDatabase)
 
@@ -72,6 +106,13 @@ describe('seedSampleLibrary', () => {
       'week8-interview-protocols',
       'week9-thematic-analysis',
     ])
+  })
+
+  it('writes the Week 9 segments and moments', async () => {
+    await seedSampleLibrary(now)
+    expect(await listSegmentsForRecording('week9-thematic-analysis')).toHaveLength(10)
+    expect(await listMomentsForRecording('week9-thematic-analysis')).toHaveLength(3)
+    expect(await listSegmentsForRecording('lecture17-client-side-ml')).toEqual([])
   })
 
   it('changes nothing when run a second time', async () => {

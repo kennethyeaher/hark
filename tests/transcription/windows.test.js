@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { findQuietCuts, planWindows } from '../../src/transcription/windows.js'
+import { findQuietCuts, findSkippedTail, planWindows } from '../../src/transcription/windows.js'
 
 // a low sample rate keeps the synthetic arrays small; the search works in whole samples anyway
 const sampleRate = 100
@@ -118,5 +118,44 @@ describe('planWindows', () => {
     expect(() => planWindows(600, [0])).toThrow('cut 0 must be after 0 and before 600, got 0')
     expect(() => planWindows(600, 'x')).toThrow(/cuts must be an array/)
     expect(() => planWindows(-1, [])).toThrow(/durationSeconds/)
+  })
+})
+
+describe('findSkippedTail', () => {
+  it('returns the last segment end when loud audio follows it', () => {
+    expect(findSkippedTail(makeAudio(20), 10, { sampleRate })).toBe(10)
+  })
+
+  it('returns null when the tail is 2 seconds or shorter', () => {
+    expect(findSkippedTail(makeAudio(20), 18, { sampleRate })).toBeNull()
+    expect(findSkippedTail(makeAudio(20), 18.5, { sampleRate })).toBeNull()
+    expect(findSkippedTail(makeAudio(20), 17.9, { sampleRate })).toBe(17.9)
+  })
+
+  it('returns null when the tail is silent', () => {
+    expect(findSkippedTail(makeAudio(20, [[10, 20]]), 10, { sampleRate })).toBeNull()
+    expect(findSkippedTail(new Float32Array(2000), 5, { sampleRate })).toBeNull()
+  })
+
+  it('treats a tail with quiet speech as speech but a faint hiss as silence', () => {
+    // the loud half of the window sets the threshold near 0.035
+    const quiet = makeAudio(20)
+    quiet.fill(0.1, 1000)
+    expect(findSkippedTail(quiet, 10, { sampleRate })).toBe(10)
+    quiet.fill(0.01, 1000)
+    expect(findSkippedTail(quiet, 10, { sampleRate })).toBeNull()
+  })
+
+  it('returns null when whisper returned no segments', () => {
+    expect(findSkippedTail(makeAudio(20), null, { sampleRate })).toBeNull()
+  })
+
+  it('rejects bad input', () => {
+    expect(() => findSkippedTail([0], 1, { sampleRate })).toThrow(TypeError)
+    expect(() => findSkippedTail(makeAudio(5), 1, {})).toThrow(RangeError)
+    expect(() => findSkippedTail(makeAudio(5), -1, { sampleRate })).toThrow(RangeError)
+    expect(() => findSkippedTail(makeAudio(5), 1, { sampleRate, minimumSeconds: -1 })).toThrow(
+      RangeError
+    )
   })
 })

@@ -8,6 +8,7 @@ import {
   listRecordingsForCourse,
   restoreRecording,
   saveRecording,
+  setRecordingStarred,
   trashRecording,
   updateRecordingStatus,
 } from '../../src/data/recordings.js'
@@ -335,5 +336,21 @@ describe('updateRecordingStatus', () => {
       'no recording with id missing'
     )
     await expect(updateRecordingStatus('week9', null)).rejects.toThrow(/must be an object/)
+  })
+})
+
+describe('setRecordingStarred', () => {
+  it('stars and unstars a recording and keeps every other field', async () => {
+    await saveRecording(makeRecording())
+    const starred = await setRecordingStarred('week9', true)
+    expect(starred.isStarred).toBe(true)
+    expect((await getRecording('week9')).title).toBe(makeRecording().title)
+    expect((await setRecordingStarred('week9', false)).isStarred).toBe(false)
+  })
+
+  it('rejects a non boolean and a missing recording', async () => {
+    await saveRecording(makeRecording())
+    expect(() => setRecordingStarred('week9', 'yes')).toThrow(/true or false/)
+    await expect(setRecordingStarred('missing', true)).rejects.toThrow(/no recording/)
   })
 })

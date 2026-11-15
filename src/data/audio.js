@@ -4,15 +4,47 @@ import { abortTransaction, openDatabase } from './db.js'
 import { announceChange } from './events.js'
 import { assertNonNegativeNumber, assertObject, assertText } from './validate.js'
 
+/** the most waveform bars an audio entry may keep */
+export const maxPeakCount = 400
+
+/**
+ * check a list of waveform peaks.
+ * @param {unknown} peaks value to check
+ * @param {string} label what the peaks belong to, used in the error message
+ * @returns {number[]} a copy of the peaks
+ * @throws {TypeError} when peaks is not an array
+ * @throws {RangeError} when peaks is longer than maxPeakCount or holds a value that is not
+ *   a finite number from 0 to 1
+ */
+function assertPeaks(peaks, label) {
+  if (!Array.isArray(peaks)) {
+    throw new TypeError(`${label} peaks must be an array, got ${String(peaks)}`)
+  }
+  if (peaks.length > maxPeakCount) {
+    throw new RangeError(
+      `${label} peaks can hold at most ${maxPeakCount} values, got ${peaks.length}`
+    )
+  }
+  peaks.forEach((value, index) => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) {
+      throw new RangeError(
+        `${label} peak ${index} must be a number from 0 to 1, got ${String(value)}`
+      )
+    }
+  })
+  return [...peaks]
+}
+
 /**
  * check an audio entry and copy only the fields the store keeps. name, type, and size are
  * read from the blob when they are missing, so a File can be passed straight in.
- * @param {unknown} audio audio with recordingId, blob, and optional name, type, and size
- * @returns {{ recordingId: string, blob: Blob, name: string, type: string, size: number }}
- *   the audio to store
- * @throws {TypeError} when recordingId or name is missing, blob is not a Blob, or type is
- *   not a string
- * @throws {RangeError} when size is negative or does not match the blob
+ * @param {unknown} audio audio with recordingId, blob, and optional name, type, size, and peaks
+ * @returns {{ recordingId: string, blob: Blob, name: string, type: string, size: number,
+ *   peaks?: number[] }} the audio to store, with peaks only when it had them
+ * @throws {TypeError} when recordingId or name is missing, blob is not a Blob, type is
+ *   not a string, or peaks is not an array
+ * @throws {RangeError} when size is negative or does not match the blob, or peaks is longer
+ *   than maxPeakCount or holds a value that is not a number from 0 to 1
  */
 export function normalizeAudio(audio) {
   assertObject(audio, 'audio')
@@ -38,6 +70,7 @@ export function normalizeAudio(audio) {
   if (stored.size !== stored.blob.size) {
     throw new RangeError(`${label} size is ${stored.size} but the blob has ${stored.blob.size}`)
   }
+  if (audio.peaks !== undefined) stored.peaks = assertPeaks(audio.peaks, label)
   return stored
 }
 
@@ -83,6 +116,29 @@ export async function saveAudio(audio) {
   await transaction.done
   announceChange('audio', stored.recordingId)
   return stored
+}
+
+/**
+ * store waveform peaks on the audio record a recording already has, leaving the blob alone.
+ * @param {string} recordingId recording id
+ * @param {number[]} peaks bar heights from 0 to 1, at most maxPeakCount long
+ * @returns {Promise<void>} resolves once the peaks are stored
+ * @throws {TypeError} when recordingId is blank, peaks is not an array, or the recording has no audio
+ * @throws {RangeError} when peaks is too long or holds a value outside 0 to 1
+ */
+export async function saveAudioPeaks(recordingId, peaks) {
+  assertText(recordingId, 'recordingId')
+  const stored = assertPeaks(peaks, `audio for ${recordingId}`)
+  const database = await openDatabase()
+  const transaction = database.transaction('audio', 'readwrite')
+  const audio = await transaction.store.get(recordingId)
+  if (!audio) {
+    await abortTransaction(transaction)
+    throw new TypeError(`recording ${recordingId} has no audio to save peaks on`)
+  }
+  await transaction.store.put({ ...audio, peaks: stored })
+  await transaction.done
+  announceChange('audio', recordingId)
 }
 
 /**

@@ -120,6 +120,45 @@ export function findQuietCuts(
   return cuts
 }
 
+// a tail counts as speech when its RMS is above this share of the whole window's RMS. speech is
+// 20 dB or more above a pause or room noise, and 0.1 is 20 dB down, so a pause stays below it and
+// even a few quiet words in an otherwise silent tail rise above it.
+const tailSpeechShare = 0.1
+// digital silence has an RMS of 0, so the share alone would call a silent window's tail speech
+const tailSpeechFloor = 0.001
+
+/**
+ * find where whisper stopped hearing speech in a window, when the audio after that point is not
+ * silent. whisper sometimes returns nothing for the end of the audio it is given.
+ * @param {Float32Array} samples the audio of one window
+ * @param {number | null} lastEndSeconds where the last segment ended, relative to the window, or
+ *   null when whisper returned no segments
+ * @param {{ sampleRate: number, minimumSeconds?: number }} options sample rate of the audio and
+ *   the shortest tail worth another pass, in seconds
+ * @returns {number | null} the start of the skipped tail in seconds, relative to the window, or
+ *   null when the tail is short, silent, or there was no segment to measure from. a window with
+ *   no segments at all returns null too, because the same audio would give the same answer.
+ * @throws {TypeError} when samples is not a Float32Array
+ * @throws {RangeError} when sampleRate or minimumSeconds is out of range, or lastEndSeconds is
+ *   negative or not a number
+ */
+export function findSkippedTail(samples, lastEndSeconds, { sampleRate, minimumSeconds = 2 } = {}) {
+  if (!(samples instanceof Float32Array)) {
+    throw new TypeError(`samples must be a Float32Array, got ${String(samples)}`)
+  }
+  assertPositive(sampleRate, 'sampleRate')
+  assertNotNegative(minimumSeconds, 'minimumSeconds')
+  if (lastEndSeconds === null) return null
+  assertNotNegative(lastEndSeconds, 'lastEndSeconds')
+
+  const tailStart = Math.round(lastEndSeconds * sampleRate)
+  if (samples.length - tailStart <= Math.round(minimumSeconds * sampleRate)) return null
+  const tailLoudness = measureLoudness(samples, tailStart, samples.length)
+  const windowLoudness = measureLoudness(samples, 0, samples.length)
+  const threshold = Math.max(windowLoudness * tailSpeechShare, tailSpeechFloor)
+  return tailLoudness > threshold ? lastEndSeconds : null
+}
+
 /**
  * plan the windows between cuts, each running from one cut to the next.
  * @param {number} durationSeconds length of the audio

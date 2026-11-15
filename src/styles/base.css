@@ -82,6 +82,11 @@ a {
   outline: none;
 }
 
+/* the hidden attribute always hides, even on elements whose class sets a display value */
+[hidden] {
+  display: none !important;
+}
+
 /* hides content visually but keeps it available to screen readers */
 .visually-hidden {
   position: absolute !important;

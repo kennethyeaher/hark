@@ -46,6 +46,90 @@ export function formatDuration(seconds) {
 }
 
 /**
+ * format a length in seconds down to the second, such as `2 hr 00 min 20 s`, `48 min 05 s`, or
+ * `35 s`. leading units that are zero are left out.
+ * @param {number} seconds duration in seconds, zero or more
+ * @returns {string} the formatted duration
+ * @throws {TypeError} when seconds is not a number or is NaN
+ * @throws {RangeError} when seconds is negative or infinite
+ */
+export function formatExactDuration(seconds) {
+  assertSeconds(seconds)
+
+  // round to whole seconds first so 59.6 s carries into 1 min 00 s
+  const totalSeconds = Math.round(seconds)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const remainder = totalSeconds % 60
+  /**
+   * pad a count to two digits.
+   * @param {number} value a whole number from 0 to 59
+   * @returns {string} for example `05`
+   */
+  const pad = (value) => String(value).padStart(2, '0')
+
+  if (hours > 0) return `${hours} hr ${pad(minutes)} min ${pad(remainder)} s`
+  if (minutes > 0) return `${minutes} min ${pad(remainder)} s`
+  return `${remainder} s`
+}
+
+/**
+ * check that seconds is a finite number of zero or more.
+ * @param {unknown} seconds value to check
+ * @returns {void}
+ * @throws {TypeError} when seconds is not a number or is NaN
+ * @throws {RangeError} when seconds is negative or infinite
+ */
+function assertSeconds(seconds) {
+  if (typeof seconds !== 'number' || Number.isNaN(seconds)) {
+    throw new TypeError(`seconds must be a number, got ${String(seconds)}`)
+  }
+  if (!Number.isFinite(seconds) || seconds < 0) {
+    throw new RangeError(`seconds must be finite and not negative, got ${seconds}`)
+  }
+}
+
+/**
+ * format a playback position as a clock, such as `0:05`, `13:15`, or `1:14:02`. partial seconds
+ * are dropped, so the clock only ticks once a second has fully passed.
+ * @param {number} seconds position in seconds, zero or more
+ * @returns {string} the clock text
+ * @throws {TypeError} when seconds is not a number or is NaN
+ * @throws {RangeError} when seconds is negative or infinite
+ */
+export function formatClock(seconds) {
+  assertSeconds(seconds)
+  const totalSeconds = Math.floor(seconds)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const remainder = String(totalSeconds % 60).padStart(2, '0')
+  if (hours === 0) return `${minutes}:${remainder}`
+  return `${hours}:${String(minutes).padStart(2, '0')}:${remainder}`
+}
+
+/**
+ * describe a time in words for screen readers, such as `13 minutes 15 seconds` or
+ * `1 hour 14 minutes`. units that are zero are left out, and 0 reads `0 seconds`.
+ * @param {number} seconds time in seconds, zero or more
+ * @returns {string} the spoken text
+ * @throws {TypeError} when seconds is not a number or is NaN
+ * @throws {RangeError} when seconds is negative or infinite
+ */
+export function describeSpokenTime(seconds) {
+  assertSeconds(seconds)
+  const totalSeconds = Math.floor(seconds)
+  const units = [
+    [Math.floor(totalSeconds / 3600), 'hour'],
+    [Math.floor((totalSeconds % 3600) / 60), 'minute'],
+    [totalSeconds % 60, 'second'],
+  ]
+  const parts = units
+    .filter(([count]) => count > 0)
+    .map(([count, unit]) => `${count} ${unit}${count === 1 ? '' : 's'}`)
+  return parts.length === 0 ? '0 seconds' : parts.join(' ')
+}
+
+/**
  * check that a value is a Date holding a real time.
  * @param {unknown} value value to check
  * @returns {boolean} true when value is a valid Date
@@ -81,6 +165,17 @@ export function formatRelativeDate(date, now = new Date()) {
 
   const label = `${monthNames[date.getMonth()]} ${date.getDate()}`
   return date.getFullYear() === now.getFullYear() ? label : `${label}, ${date.getFullYear()}`
+}
+
+/**
+ * format a date with its year, such as `Oct 28, 2026`, for the Recording page meta line.
+ * @param {Date} date the date to show
+ * @returns {string} the month, day, and year
+ * @throws {TypeError} when date is not a valid Date
+ */
+export function formatFullDate(date) {
+  if (!isValidDate(date)) throw new TypeError(`date must be a valid Date, got ${String(date)}`)
+  return `${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`
 }
 
 const countFormatter = new Intl.NumberFormat('en-US')

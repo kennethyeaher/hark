@@ -1,0 +1,733 @@
+/* the Recording page: header across the top, transcript column, and the rail on the right */
+
+/* the rail runs to the right and bottom edges of the window, as in the mock */
+.page-recording {
+  display: flex;
+  flex-direction: column;
+  margin: calc(-1 * var(--space-3)) calc(-1 * var(--content-padding)) calc(-1 * var(--space-7));
+  min-height: calc(100dvh - 72px);
+}
+
+/* header: back, crumb and title, then the actions */
+.recording-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px var(--content-padding);
+}
+
+.recording-back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-label);
+  background: var(--color-fill);
+  border: 0;
+  border-radius: 17px;
+}
+
+.recording-heading {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.recording-crumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+}
+
+.recording-crumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-secondary-label);
+  font-weight: var(--weight-medium);
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.recording-crumb-link:hover {
+  color: var(--color-label);
+}
+
+.recording-crumb-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+}
+
+.recording-title {
+  font-size: var(--text-22);
+  font-weight: var(--weight-semibold);
+  letter-spacing: -0.01em;
+  line-height: var(--leading-tight);
+}
+
+.recording-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.recording-star,
+.recording-more {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+}
+
+.recording-star:hover,
+.recording-more:hover,
+.recording-back:hover {
+  background: var(--color-separator);
+}
+
+.recording-star.is-starred {
+  color: var(--course-orange);
+}
+
+.recording-star.is-starred .icon {
+  fill: currentColor;
+}
+
+/* coming soon buttons stay focusable, so they only look quieter */
+.recording-actions [aria-disabled='true'] {
+  color: var(--color-secondary-label);
+  cursor: not-allowed;
+}
+
+.recording-actions [aria-disabled='true']:hover {
+  background: transparent;
+}
+
+.recording-export {
+  border-radius: 9px;
+}
+
+/* the transcript column and the rail share the space under the header */
+.recording-body {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1fr) var(--panel-width);
+}
+
+.recording-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 0 var(--content-padding) var(--space-7);
+  container-type: inline-size;
+}
+
+/* the player and toolbar stay at the top while the transcript scrolls under them */
+.recording-controls {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 0 var(--space-2);
+  background: var(--color-background);
+}
+
+/* player card */
+.player-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 14px 18px;
+  background: var(--color-grouped);
+  border-radius: var(--radius-card);
+}
+
+.player-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.player-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.player-skip {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+  border-radius: 17px;
+}
+
+.player-skip:hover:not(:disabled) {
+  background: var(--color-fill);
+}
+
+.player-play {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-on-blue);
+  background: var(--color-blue);
+  border: 0;
+  border-radius: 22px;
+}
+
+.player-play:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-blue) 88%, #000000);
+}
+
+.player-card button:disabled,
+.player-speed:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.player-time {
+  flex: none;
+  font-size: var(--text-13);
+  font-variant-numeric: tabular-nums;
+}
+
+.player-time-current {
+  min-width: 4ch;
+  font-weight: var(--weight-medium);
+}
+
+.player-time-total {
+  color: var(--color-secondary-label);
+}
+
+.player-speed {
+  flex: none;
+  height: 30px;
+  padding: 0 var(--space-2);
+  font-size: var(--text-13);
+  font-weight: var(--weight-medium);
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-row);
+}
+
+.player-message {
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+/* waveform slider: bars grow from the middle, played bars are blue */
+.player-waveform {
+  flex: 1;
+  min-width: 120px;
+  height: 36px;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.player-waveform-bars {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  height: 100%;
+}
+
+.player-waveform-bar {
+  flex: 0 0 3px;
+  min-height: 3px;
+  background: var(--color-blue-soft);
+  border-radius: 1.5px;
+  pointer-events: none;
+}
+
+.player-waveform-bar.is-played {
+  background: var(--color-blue);
+}
+
+/* placeholder bars until real peaks exist, at the waveform pending opacity */
+.player-waveform.is-pending .player-waveform-bar {
+  opacity: 0.3;
+}
+
+.player-waveform.is-pending .player-waveform-bar.is-played {
+  opacity: 1;
+}
+
+.player-waveform[aria-disabled='true'] {
+  cursor: not-allowed;
+}
+
+/* a narrow column puts the waveform on its own row under the buttons */
+@container (max-width: 560px) {
+  .player-waveform {
+    flex-basis: 100%;
+    order: 1;
+  }
+}
+
+/* failed transcription */
+.recording-failed {
+  margin: 0 var(--content-padding);
+  padding: var(--space-4) 18px;
+  background: var(--color-grouped);
+  border-radius: var(--radius-card);
+}
+
+.recording-failed-message {
+  color: var(--color-red-text);
+}
+
+/* transcript toolbar: find on the left, then the switch and Edit */
+.transcript-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.transcript-autoscroll {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+/* find field, styled like the top bar search */
+.transcript-find {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 180px;
+  padding: 0 var(--space-3);
+  color: var(--color-secondary-label);
+  background: var(--color-fill);
+  border-radius: 10px;
+}
+
+.transcript-find:focus-within {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.transcript-find.is-disabled {
+  opacity: 0.45;
+}
+
+.transcript-find-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-13);
+  background: transparent;
+  border: 0;
+}
+
+.transcript-find-input:focus-visible {
+  outline: none;
+}
+
+.transcript-find-input::placeholder {
+  color: var(--color-secondary-label);
+}
+
+.transcript-find-count {
+  flex: none;
+  font-size: var(--text-12);
+  font-variant-numeric: tabular-nums;
+}
+
+/* find highlights: a light orange wash, and the full shape color on the current match */
+.transcript-match {
+  color: inherit;
+  background: color-mix(in srgb, var(--course-orange) 22%, var(--color-background));
+  border-radius: 3px;
+}
+
+.transcript-match.is-current {
+  color: var(--color-label);
+  background: var(--course-orange);
+}
+
+/* a switch: the thumb sits right and the track turns blue when on */
+.switch {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 34px;
+  height: 20px;
+  padding: 2px;
+  background: var(--color-secondary-label);
+  border: 0;
+  border-radius: 10px;
+}
+
+.switch[aria-checked='true'] {
+  justify-content: flex-end;
+  background: var(--color-blue);
+}
+
+.switch-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--color-on-blue);
+  border-radius: 8px;
+}
+
+/* transcript rows: time on the left, text, then any moment dots */
+.transcript-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 9px 12px;
+  color: var(--color-label);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+}
+
+.transcript-row:hover {
+  background: var(--color-grouped);
+}
+
+.transcript-row.is-active {
+  background: var(--color-blue-tint);
+}
+
+.transcript-time {
+  flex: none;
+  width: 50px;
+  padding-top: 3px;
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+.transcript-row.is-active .transcript-time {
+  color: var(--color-blue);
+}
+
+.transcript-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--text-15);
+  line-height: 23px;
+}
+
+.transcript-moments {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-1);
+  padding-top: 6px;
+}
+
+.transcript-moments:empty {
+  display: none;
+}
+
+.transcript-moment-more {
+  color: var(--color-secondary-label);
+  font-size: var(--text-11);
+  font-weight: var(--weight-medium);
+  line-height: 10px;
+}
+
+.transcript-moment-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+.transcript-empty {
+  padding: var(--space-4) 12px;
+  color: var(--color-secondary-label);
+}
+
+/* edit mode: the time stays, the text becomes a field that grows with its content */
+.transcript-edit-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 6px 12px;
+}
+
+.transcript-field-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.transcript-field {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px var(--space-2);
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-15);
+  line-height: 23px;
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-input);
+  resize: vertical;
+  field-sizing: content;
+}
+
+.transcript-field[aria-invalid='true'] {
+  border-color: var(--color-red);
+}
+
+.transcript-field-error {
+  margin-top: var(--space-1);
+  color: var(--color-red-text);
+  font-size: var(--text-13);
+}
+
+.transcript-edit-row .transcript-time {
+  padding-top: 9px;
+}
+
+/* the rail: summary, notes, and moments, staying in view while the transcript scrolls */
+.recording-rail {
+  border-left: 1px solid var(--color-separator);
+}
+
+.recording-rail-inner {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 100dvh;
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+.rail-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-card);
+}
+
+.rail-card-grouped {
+  background: var(--color-grouped);
+  border-color: transparent;
+}
+
+.rail-card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-14);
+  font-weight: var(--weight-semibold);
+}
+
+.rail-card-title > span:first-of-type {
+  flex: 1;
+}
+
+.rail-card-icon-blue {
+  color: var(--color-blue);
+}
+
+.rail-card-note {
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+  line-height: 19px;
+}
+
+/* notes */
+.notes-status {
+  color: var(--color-secondary-label);
+  font-size: var(--text-11);
+  font-weight: var(--weight-regular);
+}
+
+.notes-field {
+  width: 100%;
+  min-height: 76px;
+  max-height: 320px;
+  padding: var(--space-1) 0;
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-13);
+  line-height: 19px;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  resize: vertical;
+  field-sizing: content;
+}
+
+.notes-field::placeholder {
+  color: var(--color-secondary-label);
+}
+
+/* moments */
+.moments-add,
+.moment-delete {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: var(--color-label);
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+}
+
+.moments-add {
+  margin: -6px -6px -6px 0;
+}
+
+.moments-add:hover,
+.moment-delete:hover {
+  background: var(--color-grouped);
+}
+
+.moments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  list-style: none;
+}
+
+.moment-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.moment-dot {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-left: -7px;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+}
+
+.moment-dot-fill {
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+}
+
+.moment-time {
+  flex: none;
+  padding: 3px var(--space-1);
+  color: var(--color-secondary-label);
+  font-size: var(--text-12);
+  font-weight: var(--weight-medium);
+  font-variant-numeric: tabular-nums;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
+
+.moment-dot:hover,
+.moment-time:hover {
+  background: var(--color-grouped);
+}
+
+.moment-time:hover {
+  color: var(--color-blue);
+}
+
+.moment-label {
+  flex: 1;
+  min-width: 0;
+  padding: 3px var(--space-1);
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-13);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.moment-label:hover {
+  border-color: var(--color-separator);
+}
+
+.moment-label:focus-visible {
+  outline-offset: 0;
+}
+
+.moment-delete {
+  width: 24px;
+  height: 24px;
+  color: var(--color-secondary-label);
+}
+
+.moments-empty {
+  color: var(--color-secondary-label);
+  font-size: var(--text-13);
+}
+
+.moments-undo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 6px 10px;
+  font-size: var(--text-13);
+  background: var(--color-grouped);
+  border-radius: var(--radius-row);
+}
+
+.moments-undo-button {
+  padding: 2px 6px;
+  color: var(--color-blue);
+  font-weight: var(--weight-medium);
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+}
