@@ -121,12 +121,12 @@ export function renderMomentsPanel({
    * @returns {Promise<void>} resolves once deleted or reported
    */
   async function deleteMoment(moment) {
-    const before = moments
     setMoments(moments.filter((candidate) => candidate.id !== moment.id))
     try {
       await onDelete(moment.id)
     } catch (error) {
-      setMoments(before)
+      // put back only this moment, so another delete that finished meanwhile stays done
+      setMoments([...moments, moment])
       focusInRow(moment.id, '.moment-delete')
       announce(`The moment could not be deleted: ${error.message}`)
       return
@@ -244,7 +244,8 @@ export function renderMomentsPanel({
         return
       }
       if (await saveChange(moment, { ...moment, label })) announce(`Renamed to ${label}`)
-      else labelField.value = current().label
+      // the moment may have been deleted while the save ran
+      else if (current()) labelField.value = current().label
     })
 
     const deleteButton = createElement('button', { type: 'button', className: 'moment-delete' }, [

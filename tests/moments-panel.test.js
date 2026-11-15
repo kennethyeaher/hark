@@ -150,4 +150,16 @@ describe('renderMomentsPanel', () => {
     await vi.waitFor(() => expect(labelsOf(panel.element)).toEqual(['Exam hint', 'Ask about this']))
     expect(options.onSave).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }))
   })
+
+  it('puts back only the moment whose delete failed', async () => {
+    const onDelete = vi.fn(async (id) => {
+      if (id === 'm1') throw new Error('locked')
+    })
+    const { panel } = setup({ onDelete })
+    const [first, second] = panel.element.querySelectorAll('.moment-delete')
+    first.click()
+    second.click()
+    await vi.waitFor(() => expect(onDelete).toHaveBeenCalledTimes(2))
+    await vi.waitFor(() => expect(labelsOf(panel.element)).toEqual(['Exam hint']))
+  })
 })
