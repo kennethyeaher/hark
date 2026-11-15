@@ -10,10 +10,11 @@ import { renderNotFound } from './not-found.js'
 import { getRecording, setRecordingStarred } from '../data/recordings.js'
 import { getAudio, saveAudioPeaks } from '../data/audio.js'
 import { listSegmentsForRecording, updateSegmentTexts } from '../data/segments.js'
-import { listMomentsForRecording } from '../data/moments.js'
+import { deleteMoment, listMomentsForRecording, saveMoment } from '../data/moments.js'
 import { getNote, saveNote } from '../data/notes.js'
 import { renderSummaryPanel } from '../components/summary-panel.js'
 import { renderNotesPanel } from '../components/notes-panel.js'
+import { renderMomentsPanel } from '../components/moments-panel.js'
 import { createPlayer } from '../player/player.js'
 import { readSavedRate, saveRate } from '../player/saved-rate.js'
 import { findActiveSegmentIndex } from '../player/active-segment.js'
@@ -34,6 +35,8 @@ const defaultServices = {
   saveAudioPeaks,
   listSegmentsForRecording,
   listMomentsForRecording,
+  saveMoment,
+  deleteMoment,
   getNote,
   saveNote,
   updateSegmentTexts,
@@ -130,8 +133,21 @@ export function renderRecording(
   let player = null
   let positionSeconds = 0
   const timeListeners = new Set()
-  // moments are read once, for the transcript dots
+  // moments are read once and shared by the rail and the transcript dots
   let momentsRead = null
+  const momentListeners = new Set()
+  // the newest moments after a change in the rail, so a transcript that loads later is current
+  let latestMoments = null
+
+  /**
+   * tell the transcript about changed moments.
+   * @param {object[]} moments the moments
+   * @returns {void}
+   */
+  function showMoments(moments) {
+    latestMoments = moments
+    for (const listener of momentListeners) listener(moments)
+  }
 
   /**
    * tell every part of the page the playback position.
@@ -234,11 +250,13 @@ export function renderRecording(
     })
     const main = createElement('div', { className: 'recording-main' }, [controls, transcriptSlot])
     const notesSlot = createElement('div', { className: 'rail-slot', 'aria-busy': 'true' })
+    const momentsSlot = createElement('div', { className: 'rail-slot', 'aria-busy': 'true' })
     // Milestone 5 puts the summary and key points into the Summary card's body
     const rail = createElement('aside', { className: 'recording-rail', 'aria-label': 'Notes' }, [
       createElement('div', { className: 'recording-rail-inner' }, [
         renderSummaryPanel(),
         notesSlot,
+        momentsSlot,
       ]),
     ])
     page.replaceChildren(
@@ -249,6 +267,7 @@ export function renderRecording(
     mountPlayer(recording, controls)
     mountTranscript(controls, transcriptSlot)
     mountNotes(notesSlot)
+    mountMoments(momentsSlot)
   }
 
   /**
@@ -293,6 +312,34 @@ export function renderRecording(
   }
 
   /**
+   * show Moments once the moments are read.
+   * @param {HTMLElement} slot where the card goes
+   * @returns {Promise<void>} resolves once the card shows or the failure is shown
+   */
+  async function mountMoments(slot) {
+    let moments
+    try {
+      moments = await momentsRead
+    } catch (error) {
+      if (!hasLeft) showReadError(slot, 'The moments', error)
+      return
+    }
+    if (hasLeft) return
+    const panel = renderMomentsPanel({
+      moments,
+      recordingId: id,
+      getCurrentTime: () => positionSeconds,
+      onSeek: seekTo,
+      onSave: (moment) => services.saveMoment(moment),
+      onDelete: (momentId) => services.deleteMoment(momentId),
+      onChange: showMoments,
+    })
+    slot.removeAttribute('aria-busy')
+    slot.replaceChildren(panel.element)
+    cleanups.push(panel.destroy)
+  }
+
+  /**
    * load the segments and moments, then show the transcript and keep it in step with playback.
    * @param {HTMLElement} controls the sticky area that gets the toolbar
    * @param {HTMLElement} slot where the transcript goes
@@ -304,7 +351,7 @@ export function renderRecording(
     try {
       ;[storedSegments, moments] = await Promise.all([
         services.listSegmentsForRecording(id),
-        // a failed moments read only costs the transcript its dots
+        // the Moments card reports a failed read, so the transcript just shows no dots
         momentsRead.catch(() => []),
       ])
     } catch (error) {
@@ -341,7 +388,8 @@ export function renderRecording(
     let isEditing = false
     let isSaving = false
     const list = renderTranscriptList({ segments, onSeek: seekTo })
-    list.setMoments(moments)
+    list.setMoments(latestMoments ?? moments)
+    momentListeners.add(list.setMoments)
 
     /**
      * ask the browser to confirm closing the tab while edits are unsaved.

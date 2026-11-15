@@ -71,6 +71,8 @@ function createServices(overrides = {}) {
     updateSegmentTexts: vi.fn(async () => []),
     getNote: vi.fn(async () => ({ recordingId: 'week9', body: 'Ask about NVivo' })),
     saveNote: vi.fn(async (note) => note),
+    saveMoment: vi.fn(async (moment) => ({ id: 'm-new', ...moment })),
+    deleteMoment: vi.fn(async () => {}),
     createPlayer: vi.fn(() => player),
     decodeAudio: vi.fn(async () => ({ samples: new Float32Array([0, 0.5]), durationSeconds: 1 })),
     buildPeaks: vi.fn(() => [0.3, 0.6, 1]),
@@ -563,5 +565,43 @@ describe('Recording page rail', () => {
     const services = createServices({ getNote: vi.fn(async () => undefined) })
     const { page } = mount({ services })
     await vi.waitFor(() => expect(page.querySelector('.notes-field')?.value).toBe(''))
+  })
+})
+
+describe('Recording page moments', () => {
+  it('adds a moment at the playback time and shows its dot on the transcript', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.moments-add')).not.toBeNull())
+    await vi.waitFor(() => expect(page.querySelectorAll('.transcript-row')).toHaveLength(3))
+    await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
+    services.player.push({ currentTime: 800.4 })
+    page.querySelector('.moments-add').click()
+    await vi.waitFor(() =>
+      expect(services.saveMoment).toHaveBeenCalledWith(
+        expect.objectContaining({ recordingId: 'week9', atSeconds: 800, label: 'Moment' })
+      )
+    )
+    await vi.waitFor(() =>
+      expect(
+        page.querySelectorAll('.transcript-row')[2].querySelector('.transcript-moment-dot')
+      ).not.toBeNull()
+    )
+  })
+
+  it('seeks back to a moment from its time', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.moment-time')).not.toBeNull())
+    await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
+    page.querySelector('.moment-time').click()
+    expect(services.player.seek).toHaveBeenCalledWith(760)
+  })
+
+  it('drops the transcript dot when a moment is deleted', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.transcript-moment-dot')).not.toBeNull())
+    await vi.waitFor(() => expect(page.querySelector('.moment-delete')).not.toBeNull())
+    page.querySelector('.moment-delete').click()
+    await vi.waitFor(() => expect(services.deleteMoment).toHaveBeenCalledWith('m0'))
+    expect(page.querySelector('.transcript-moment-dot')).toBeNull()
   })
 })
