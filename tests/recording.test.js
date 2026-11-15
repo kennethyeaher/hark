@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { missingAudioMessage, renderRecording } from '../src/pages/recording.js'
+import { sampleAudioMessage, renderRecording } from '../src/pages/recording.js'
 import { leavePage, getPageHooks } from '../src/app/page-hooks.js'
 
 const course = { id: 'hcim605', code: 'HCIM 605', color: 'indigo' }
@@ -231,7 +231,7 @@ describe('Recording page player', () => {
     const services = createServices({ getAudio: vi.fn(async () => undefined) })
     const { page } = mount({ services })
     await vi.waitFor(() => expect(page.querySelector('.player-card')).not.toBeNull())
-    expect(page.querySelector('.player-message').textContent).toBe(missingAudioMessage)
+    expect(page.querySelector('.player-message').textContent).toBe(sampleAudioMessage)
     expect(page.querySelector('.player-play').disabled).toBe(true)
     expect(page.querySelector('.player-waveform').getAttribute('aria-disabled')).toBe('true')
     expect(services.createPlayer).not.toHaveBeenCalled()

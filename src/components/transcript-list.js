@@ -35,8 +35,7 @@ export function groupMomentsBySegment(segments, moments) {
  *   setMoments: (moments: object[]) => void, showMatches: (matches: object[]) => void,
  *   setCurrentMatch: (matchIndex: number) => HTMLElement | null, startEditing: () => void,
  *   stopEditing: () => void, getChanges: () => object[], hasChanges: () => boolean,
- *   showEmptyErrors: (indexes: number[]) => void, getField: (index: number) => HTMLElement,
- *   refreshText: (index: number) => void }}
+ *   showEmptyErrors: (indexes: number[]) => void, getField: (index: number) => HTMLElement }}
  *   the list and its updates. edits read and write `segment.text`, so the caller's
  *   segments stay the source of truth.
  * @throws {TypeError} when segments is not an array or onSeek is not a function
@@ -317,7 +316,5 @@ export function renderTranscriptList({ segments, onSeek }) {
      * @returns {HTMLTextAreaElement | undefined} the field, while editing
      */
     getField: (index) => fields?.[index]?.field,
-
-    refreshText,
   }
 }

@@ -177,7 +177,8 @@ export function createTranscriptionJobs({
       const { samples, durationSeconds } = await decode(audio.blob)
       if (job.isCancelled) return
       // the waveform is a nicety, so a failure here goes to reportError and the
-      // transcription carries on. a recording without peaks just shows a flat bar
+      // transcription carries on. a recording without peaks shows placeholder bars, and the
+      // Recording page builds the peaks once on a later visit
       try {
         await store.saveAudioPeaks(id, buildPeaks(samples, peakBarCount))
       } catch (error) {

@@ -25,7 +25,7 @@ import { decodeAudioFile } from '../transcription/decode.js'
 import { peakBarCount } from '../transcription/jobs.js'
 
 /** the line the player shows when a recording has no audio on this device */
-export const missingAudioMessage = 'Audio for sample lectures is not on this device.'
+export const sampleAudioMessage = 'Audio for sample lectures is not on this device.'
 
 // the real data and audio functions; tests pass fakes through the context
 const defaultServices = {
@@ -580,7 +580,7 @@ export function renderRecording(
         durationSeconds: recording.durationSeconds,
         seed: recording.id,
         rate: 1,
-        unavailableMessage: missingAudioMessage,
+        unavailableMessage: sampleAudioMessage,
         onToggle: () => {},
         onSkip: () => {},
         onSeek: () => {},
