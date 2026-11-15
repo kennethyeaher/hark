@@ -53,6 +53,7 @@ describe('renderTranscriptList', () => {
     const list = renderTranscriptList({ segments, onSeek: vi.fn() })
     list.setMoments([{ atSeconds: 5, label: 'Hint', color: 'teal' }])
     expect(list.getRow(0).querySelectorAll('.transcript-moment-dot')).toHaveLength(1)
+    expect(list.getRow(0).querySelector('.transcript-moments').textContent).toBe(', moment Hint')
     list.setMoments([{ atSeconds: 45, label: 'Quote', color: 'pink' }])
     expect(list.getRow(0).querySelectorAll('.transcript-moment-dot')).toHaveLength(0)
     expect(list.getRow(2).querySelector('.transcript-moment-dot').style.background).toBe(

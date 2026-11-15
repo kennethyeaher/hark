@@ -79,7 +79,7 @@ describe('renderMomentsPanel', () => {
     await vi.waitFor(() => expect(labelsOf(panel.element)).toHaveLength(3))
     expect(options.onSave).toHaveBeenCalledWith({
       recordingId: 'week9',
-      atSeconds: 795,
+      atSeconds: 795.6,
       label: 'Moment',
       color: 'orange',
     })

@@ -173,12 +173,15 @@ export function renderTranscriptList({ segments, onSeek }) {
               style: `background: var(--course-${moment.color})`,
             })
           ),
-          extraCount > 0 &&
-            createElement('span', {
-              className: 'transcript-moment-more',
-              'aria-hidden': 'true',
-              text: `+${extraCount}`,
-            }),
+          ...(extraCount > 0
+            ? [
+                createElement('span', {
+                  className: 'transcript-moment-more',
+                  'aria-hidden': 'true',
+                  text: `+${extraCount}`,
+                }),
+              ]
+            : []),
           createElement('span', {
             className: 'visually-hidden',
             text: `, ${group.length === 1 ? 'moment' : 'moments'} ${group.map((moment) => moment.label).join(', ')}`,

@@ -578,7 +578,7 @@ describe('Recording page moments', () => {
     page.querySelector('.moments-add').click()
     await vi.waitFor(() =>
       expect(services.saveMoment).toHaveBeenCalledWith(
-        expect.objectContaining({ recordingId: 'week9', atSeconds: 800, label: 'Moment' })
+        expect.objectContaining({ recordingId: 'week9', atSeconds: 800.4, label: 'Moment' })
       )
     )
     await vi.waitFor(() =>

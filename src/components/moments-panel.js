@@ -282,7 +282,8 @@ export function renderMomentsPanel({
   addButton.addEventListener('click', async () => {
     const draft = {
       recordingId,
-      atSeconds: Math.floor(getCurrentTime()),
+      // the exact time, so a moment added on a row's start stays on that row
+      atSeconds: getCurrentTime(),
       label: 'Moment',
       color: courseColors[moments.length % courseColors.length],
     }
