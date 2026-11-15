@@ -11,6 +11,9 @@ import { getRecording, setRecordingStarred } from '../data/recordings.js'
 import { getAudio, saveAudioPeaks } from '../data/audio.js'
 import { listSegmentsForRecording, updateSegmentTexts } from '../data/segments.js'
 import { listMomentsForRecording } from '../data/moments.js'
+import { getNote, saveNote } from '../data/notes.js'
+import { renderSummaryPanel } from '../components/summary-panel.js'
+import { renderNotesPanel } from '../components/notes-panel.js'
 import { createPlayer } from '../player/player.js'
 import { readSavedRate, saveRate } from '../player/saved-rate.js'
 import { findActiveSegmentIndex } from '../player/active-segment.js'
@@ -31,6 +34,8 @@ const defaultServices = {
   saveAudioPeaks,
   listSegmentsForRecording,
   listMomentsForRecording,
+  getNote,
+  saveNote,
   updateSegmentTexts,
   createPlayer,
   decodeAudio: decodeAudioFile,
@@ -125,6 +130,8 @@ export function renderRecording(
   let player = null
   let positionSeconds = 0
   const timeListeners = new Set()
+  // moments are read once, for the transcript dots
+  let momentsRead = null
 
   /**
    * tell every part of the page the playback position.
@@ -226,12 +233,63 @@ export function renderRecording(
       'aria-busy': 'true',
     })
     const main = createElement('div', { className: 'recording-main' }, [controls, transcriptSlot])
+    const notesSlot = createElement('div', { className: 'rail-slot', 'aria-busy': 'true' })
+    // Milestone 5 puts the summary and key points into the Summary card's body
+    const rail = createElement('aside', { className: 'recording-rail', 'aria-label': 'Notes' }, [
+      createElement('div', { className: 'recording-rail-inner' }, [
+        renderSummaryPanel(),
+        notesSlot,
+      ]),
+    ])
     page.replaceChildren(
       header.element,
-      createElement('div', { className: 'recording-body' }, [main])
+      createElement('div', { className: 'recording-body' }, [main, rail])
     )
+    momentsRead = services.listMomentsForRecording(id)
     mountPlayer(recording, controls)
     mountTranscript(controls, transcriptSlot)
+    mountNotes(notesSlot)
+  }
+
+  /**
+   * show a failure to read part of the page in its slot.
+   * @param {HTMLElement} slot the slot
+   * @param {string} what the part that could not be read, such as `The note`
+   * @param {Error} error what went wrong
+   * @returns {void}
+   */
+  function showReadError(slot, what, error) {
+    slot.removeAttribute('aria-busy')
+    slot.replaceChildren(
+      createElement('p', {
+        className: 'rail-card rail-card-note',
+        role: 'alert',
+        text: `${what} could not be read: ${error.message}`,
+      })
+    )
+  }
+
+  /**
+   * load the note and show My notes. a pending change saves when the page leaves.
+   * @param {HTMLElement} slot where the card goes
+   * @returns {Promise<void>} resolves once the card shows or the failure is shown
+   */
+  async function mountNotes(slot) {
+    let note
+    try {
+      note = await services.getNote(id)
+    } catch (error) {
+      if (!hasLeft) showReadError(slot, 'The note', error)
+      return
+    }
+    if (hasLeft) return
+    const panel = renderNotesPanel({
+      initialBody: note?.body ?? '',
+      onSave: (body) => services.saveNote({ recordingId: id, body }),
+    })
+    slot.removeAttribute('aria-busy')
+    slot.replaceChildren(panel.element)
+    cleanups.push(() => panel.flush())
   }
 
   /**
@@ -246,7 +304,8 @@ export function renderRecording(
     try {
       ;[storedSegments, moments] = await Promise.all([
         services.listSegmentsForRecording(id),
-        services.listMomentsForRecording(id),
+        // a failed moments read only costs the transcript its dots
+        momentsRead.catch(() => []),
       ])
     } catch (error) {
       if (hasLeft) return

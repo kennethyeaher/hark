@@ -69,6 +69,8 @@ function createServices(overrides = {}) {
     listSegmentsForRecording: vi.fn(async () => segments),
     listMomentsForRecording: vi.fn(async () => moments),
     updateSegmentTexts: vi.fn(async () => []),
+    getNote: vi.fn(async () => ({ recordingId: 'week9', body: 'Ask about NVivo' })),
+    saveNote: vi.fn(async (note) => note),
     createPlayer: vi.fn(() => player),
     decodeAudio: vi.fn(async () => ({ samples: new Float32Array([0, 0.5]), durationSeconds: 1 })),
     buildPeaks: vi.fn(() => [0.3, 0.6, 1]),
@@ -530,5 +532,36 @@ describe('Recording page transcript editing', () => {
     } finally {
       vi.useRealTimers()
     }
+  })
+})
+
+describe('Recording page rail', () => {
+  it('shows the summary placeholder and the saved note', async () => {
+    const { page } = mount()
+    expect(page.querySelector('.summary-panel').textContent).toContain('later version')
+    await vi.waitFor(() =>
+      expect(page.querySelector('.notes-field')?.value).toBe('Ask about NVivo')
+    )
+  })
+
+  it('saves typed notes for this recording, and saves a pending change on leave', async () => {
+    const { page, services } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.notes-field')).not.toBeNull())
+    const field = page.querySelector('.notes-field')
+    field.value = 'Ask about NVivo and Atlas'
+    field.dispatchEvent(new Event('input'))
+    leavePage(page)
+    await vi.waitFor(() =>
+      expect(services.saveNote).toHaveBeenCalledWith({
+        recordingId: 'week9',
+        body: 'Ask about NVivo and Atlas',
+      })
+    )
+  })
+
+  it('starts empty when the recording has no note', async () => {
+    const services = createServices({ getNote: vi.fn(async () => undefined) })
+    const { page } = mount({ services })
+    await vi.waitFor(() => expect(page.querySelector('.notes-field')?.value).toBe(''))
   })
 })
