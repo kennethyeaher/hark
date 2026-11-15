@@ -448,6 +448,7 @@
 .transcript-text {
   flex: 1;
   min-width: 0;
+  overflow-wrap: anywhere;
   font-size: var(--text-15);
   line-height: 23px;
 }
@@ -455,12 +456,20 @@
 .transcript-moments {
   display: flex;
   flex: none;
+  align-items: center;
   gap: var(--space-1);
   padding-top: 6px;
 }
 
 .transcript-moments:empty {
   display: none;
+}
+
+.transcript-moment-more {
+  color: var(--color-secondary-label);
+  font-size: var(--text-11);
+  font-weight: var(--weight-medium);
+  line-height: 10px;
 }
 
 .transcript-moment-dot {
@@ -579,6 +588,7 @@
 .notes-field {
   width: 100%;
   min-height: 76px;
+  max-height: 320px;
   padding: var(--space-1) 0;
   color: var(--color-label);
   font: inherit;

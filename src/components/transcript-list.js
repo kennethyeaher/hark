@@ -4,6 +4,9 @@ import { createElement } from '../lib/dom.js'
 import { formatClock } from '../lib/format.js'
 import { findActiveSegmentIndex } from '../player/active-segment.js'
 
+// more moments than this in one row show as a count after the dots
+const maxDotsPerRow = 3
+
 /**
  * group moments by the segment they fall in. a moment in a gap between segments has no row.
  * @param {{ startSeconds: number, endSeconds: number }[]} segments segments in time order
@@ -159,18 +162,27 @@ export function renderTranscriptList({ segments, onSeek }) {
       rowsWithMoments = []
       for (const [index, group] of groupMomentsBySegment(segments, moments)) {
         const row = rows[index]
+        // a few dots fit beside the text; more than that collapse into a count
+        const shown = group.slice(0, maxDotsPerRow)
+        const extraCount = group.length - shown.length
         row.querySelector('.transcript-moments').replaceChildren(
-          ...group.flatMap((moment) => [
+          ...shown.map((moment) =>
             createElement('span', {
               className: 'transcript-moment-dot',
               'aria-hidden': 'true',
               style: `background: var(--course-${moment.color})`,
-            }),
+            })
+          ),
+          extraCount > 0 &&
             createElement('span', {
-              className: 'visually-hidden',
-              text: `, moment ${moment.label}`,
+              className: 'transcript-moment-more',
+              'aria-hidden': 'true',
+              text: `+${extraCount}`,
             }),
-          ])
+          createElement('span', {
+            className: 'visually-hidden',
+            text: `, ${group.length === 1 ? 'moment' : 'moments'} ${group.map((moment) => moment.label).join(', ')}`,
+          })
         )
         rowsWithMoments.push(row)
       }

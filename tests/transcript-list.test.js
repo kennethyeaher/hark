@@ -60,6 +60,21 @@ describe('renderTranscriptList', () => {
     )
   })
 
+  it('shows at most three dots and counts the rest, while reading every label', () => {
+    const list = renderTranscriptList({ segments, onSeek: vi.fn() })
+    list.setMoments(
+      ['A', 'B', 'C', 'D', 'E'].map((label, offset) => ({
+        atSeconds: 1 + offset,
+        label,
+        color: 'teal',
+      }))
+    )
+    const row = list.getRow(0)
+    expect(row.querySelectorAll('.transcript-moment-dot')).toHaveLength(3)
+    expect(row.querySelector('.transcript-moment-more').textContent).toBe('+2')
+    expect(row.querySelector('.visually-hidden').textContent).toBe(', moments A, B, C, D, E')
+  })
+
   it('rejects bad input', () => {
     expect(() => renderTranscriptList({ segments: null, onSeek: vi.fn() })).toThrow(TypeError)
     expect(() => renderTranscriptList({ segments })).toThrow(TypeError)
