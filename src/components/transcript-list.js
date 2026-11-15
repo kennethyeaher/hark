@@ -29,7 +29,8 @@ export function groupMomentsBySegment(segments, moments) {
  *   onSeek: (seconds: number) => void }} options segments in time order and what a row click calls
  * @returns {{ element: HTMLElement, getRow: (index: number) => HTMLElement | undefined,
  *   setActiveIndex: (index: number) => HTMLElement | null,
- *   setMoments: (moments: object[]) => void }} the list and its updates
+ *   setMoments: (moments: object[]) => void, showMatches: (matches: object[]) => void,
+ *   setCurrentMatch: (matchIndex: number) => HTMLElement | null }} the list and its updates
  * @throws {TypeError} when segments is not an array or onSeek is not a function
  */
 export function renderTranscriptList({ segments, onSeek }) {
@@ -63,6 +64,26 @@ export function renderTranscriptList({ segments, onSeek }) {
 
   let activeIndex = -1
   let rowsWithMoments = []
+  // rows that show find highlights, and the marks in match order
+  let markedIndexes = []
+  let marks = []
+  let currentMark = null
+
+  /**
+   * read the text span of a row.
+   * @param {number} index segment index
+   * @returns {HTMLElement} the span
+   */
+  const textOf = (index) => rows[index].querySelector('.transcript-text')
+
+  /**
+   * show a row's text with no highlights.
+   * @param {number} index segment index
+   * @returns {void}
+   */
+  function refreshText(index) {
+    textOf(index).textContent = segments[index].text.trim()
+  }
 
   return {
     element,
@@ -119,6 +140,55 @@ export function renderTranscriptList({ segments, onSeek }) {
         )
         rowsWithMoments.push(row)
       }
+    },
+
+    /**
+     * highlight find matches with mark elements. rows that had highlights before go back to
+     * plain text first, so only the rows that change are touched.
+     * @param {{ segmentIndex: number, start: number, end: number }[]} matches matches in order,
+     *   with offsets into each segment's trimmed text
+     * @returns {void}
+     */
+    showMatches(matches) {
+      for (const index of markedIndexes) refreshText(index)
+      markedIndexes = []
+      marks = []
+      currentMark = null
+      const byRow = new Map()
+      for (const match of matches) {
+        if (!byRow.has(match.segmentIndex)) byRow.set(match.segmentIndex, [])
+        byRow.get(match.segmentIndex).push(match)
+      }
+      for (const [index, rowMatches] of byRow) {
+        const text = segments[index].text.trim()
+        const parts = []
+        let position = 0
+        for (const match of rowMatches) {
+          parts.push(text.slice(position, match.start))
+          const mark = createElement('mark', {
+            className: 'transcript-match',
+            text: text.slice(match.start, match.end),
+          })
+          marks.push(mark)
+          parts.push(mark)
+          position = match.end
+        }
+        parts.push(text.slice(position))
+        textOf(index).replaceChildren(...parts.filter((part) => part !== ''))
+        markedIndexes.push(index)
+      }
+    },
+
+    /**
+     * mark one highlight as the current match.
+     * @param {number} matchIndex position in the matches, or -1 for none
+     * @returns {HTMLElement | null} the row that holds it, or null
+     */
+    setCurrentMatch(matchIndex) {
+      currentMark?.classList.remove('is-current')
+      currentMark = marks[matchIndex] ?? null
+      currentMark?.classList.add('is-current')
+      return currentMark?.closest('.transcript-row') ?? null
     },
   }
 }

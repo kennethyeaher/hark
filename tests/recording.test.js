@@ -358,3 +358,62 @@ describe('Recording page transcript', () => {
     )
   })
 })
+
+describe('Recording page find', () => {
+  /**
+   * type into the find field.
+   * @param {HTMLElement} page the page
+   * @param {string} query the text to type
+   * @returns {HTMLInputElement} the field
+   */
+  function find(page, query) {
+    const input = page.querySelector('.transcript-find-input')
+    input.value = query
+    input.dispatchEvent(new Event('input'))
+    return input
+  }
+
+  it('highlights matches across rows and counts them', async () => {
+    const { page } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.transcript-find-input')).not.toBeNull())
+    find(page, 'ME')
+    const marks = page.querySelectorAll('mark')
+    expect(marks.length).toBeGreaterThan(0)
+    const count = page.querySelector('.transcript-find-count')
+    expect(count.textContent).toBe(`1 of ${marks.length}`)
+    expect(marks[0].classList.contains('is-current')).toBe(true)
+  })
+
+  it('steps with Enter and wraps around', async () => {
+    const { page } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.transcript-find-input')).not.toBeNull())
+    const input = find(page, 'a lot')
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('1 of 1')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }))
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('1 of 1')
+    find(page, 'ou')
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('1 of 2')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }))
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('2 of 2')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', cancelable: true }))
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('1 of 2')
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, cancelable: true })
+    )
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('2 of 2')
+  })
+
+  it('says No matches, and nothing for a one letter query or after Escape', async () => {
+    const { page } = mount()
+    await vi.waitFor(() => expect(page.querySelector('.transcript-find-input')).not.toBeNull())
+    find(page, 'zebra')
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('No matches')
+    find(page, 'a')
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('')
+    expect(page.querySelector('mark')).toBeNull()
+    const input = find(page, 'you')
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
+    expect(page.querySelector('mark')).toBeNull()
+    expect(page.querySelector('.transcript-find-count').textContent).toBe('')
+  })
+})

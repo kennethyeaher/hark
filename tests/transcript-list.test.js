@@ -65,3 +65,41 @@ describe('renderTranscriptList', () => {
     expect(() => renderTranscriptList({ segments })).toThrow(TypeError)
   })
 })
+
+describe('transcript find highlights', () => {
+  const findSegments = [
+    { startSeconds: 0, endSeconds: 10, text: 'Code the data. Code again.' },
+    { startSeconds: 10, endSeconds: 20, text: 'No match here.' },
+  ]
+
+  it('wraps each match in a mark and puts plain text back on the next search', () => {
+    const list = renderTranscriptList({ segments: findSegments, onSeek: vi.fn() })
+    list.showMatches([
+      { segmentIndex: 0, start: 0, end: 4 },
+      { segmentIndex: 0, start: 15, end: 19 },
+    ])
+    const marks = list.element.querySelectorAll('mark')
+    expect([...marks].map((mark) => mark.textContent)).toEqual(['Code', 'Code'])
+    expect(list.getRow(0).querySelector('.transcript-text').textContent).toBe(
+      'Code the data. Code again.'
+    )
+    list.showMatches([])
+    expect(list.element.querySelector('mark')).toBeNull()
+    expect(list.getRow(0).querySelector('.transcript-text').textContent).toBe(
+      'Code the data. Code again.'
+    )
+  })
+
+  it('marks the current match and returns its row', () => {
+    const list = renderTranscriptList({ segments: findSegments, onSeek: vi.fn() })
+    list.showMatches([
+      { segmentIndex: 0, start: 0, end: 4 },
+      { segmentIndex: 1, start: 0, end: 2 },
+    ])
+    expect(list.setCurrentMatch(1)).toBe(list.getRow(1))
+    expect(list.element.querySelectorAll('mark.is-current')).toHaveLength(1)
+    expect(list.getRow(1).querySelector('mark').classList.contains('is-current')).toBe(true)
+    expect(list.setCurrentMatch(-1)).toBeNull()
+    expect(list.element.querySelector('mark.is-current')).toBeNull()
+  })
+})

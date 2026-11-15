@@ -6,7 +6,6 @@ import { setPageHooks } from '../app/page-hooks.js'
 import { renderRecordingHeader } from '../components/recording-header.js'
 import { renderPlayerBar } from '../components/player-bar.js'
 import { renderTranscriptList } from '../components/transcript-list.js'
-import { renderTranscriptToolbar } from '../components/transcript-toolbar.js'
 import { renderNotFound } from './not-found.js'
 import { getRecording, setRecordingStarred } from '../data/recordings.js'
 import { getAudio, saveAudioPeaks } from '../data/audio.js'
@@ -15,6 +14,8 @@ import { listMomentsForRecording } from '../data/moments.js'
 import { createPlayer } from '../player/player.js'
 import { readSavedRate, saveRate } from '../player/saved-rate.js'
 import { findActiveSegmentIndex } from '../player/active-segment.js'
+import { findMatches } from '../player/find.js'
+import { describeMatchCount, renderTranscriptToolbar } from '../components/transcript-toolbar.js'
 import { buildPeaks } from '../audio/peaks.js'
 import { decodeAudioFile } from '../transcription/decode.js'
 import { peakBarCount } from '../transcription/jobs.js'
@@ -239,10 +240,10 @@ export function renderRecording(
    * @returns {Promise<void>} resolves once the transcript shows or the failure is shown
    */
   async function mountTranscript(controls, slot) {
-    let segments
+    let storedSegments
     let moments
     try {
-      ;[segments, moments] = await Promise.all([
+      ;[storedSegments, moments] = await Promise.all([
         services.listSegmentsForRecording(id),
         services.listMomentsForRecording(id),
       ])
@@ -260,6 +261,8 @@ export function renderRecording(
     }
     if (hasLeft) return
     slot.removeAttribute('aria-busy')
+    // find offsets and edits work on the text as shown, without whisper's leading space
+    const segments = storedSegments.map((segment) => ({ ...segment, text: segment.text.trim() }))
     if (segments.length === 0) {
       slot.replaceChildren(
         createElement('p', {
@@ -272,14 +275,40 @@ export function renderRecording(
 
     let isAutoScrollOn = true
     let lastIndex = -1
+    let matches = []
+    let currentMatch = -1
+    let hasQuery = false
     const list = renderTranscriptList({ segments, onSeek: seekTo })
     list.setMoments(moments)
+
+    /**
+     * mark the current match, scroll to it, and update the count.
+     * @param {number} matchIndex position in the matches, or -1
+     * @returns {void}
+     */
+    function showCurrentMatch(matchIndex) {
+      currentMatch = matchIndex
+      const row = list.setCurrentMatch(matchIndex)
+      if (row) scrollRowIntoView(row, controls)
+      toolbar.setMatchCount(describeMatchCount(currentMatch, matches.length, hasQuery))
+    }
+
     const toolbar = renderTranscriptToolbar({
       isAutoScrollOn,
       onAutoScroll: (isOn) => {
         isAutoScrollOn = isOn
         const row = list.getRow(lastIndex)
         if (isOn && row) scrollRowIntoView(row, controls)
+      },
+      onFind: (query) => {
+        hasQuery = query.trim().length >= 2
+        matches = findMatches(segments, query)
+        list.showMatches(matches)
+        showCurrentMatch(matches.length > 0 ? 0 : -1)
+      },
+      onFindStep: (direction) => {
+        if (matches.length === 0) return
+        showCurrentMatch((currentMatch + direction + matches.length) % matches.length)
       },
     })
     controls.append(toolbar.element)

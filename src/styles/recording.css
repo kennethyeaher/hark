@@ -317,6 +317,65 @@
   font-size: var(--text-13);
 }
 
+/* find field, styled like the top bar search */
+.transcript-find {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 180px;
+  padding: 0 var(--space-3);
+  color: var(--color-secondary-label);
+  background: var(--color-fill);
+  border-radius: 10px;
+}
+
+.transcript-find:focus-within {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.transcript-find.is-disabled {
+  opacity: 0.45;
+}
+
+.transcript-find-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-13);
+  background: transparent;
+  border: 0;
+}
+
+.transcript-find-input:focus-visible {
+  outline: none;
+}
+
+.transcript-find-input::placeholder {
+  color: var(--color-secondary-label);
+}
+
+.transcript-find-count {
+  flex: none;
+  font-size: var(--text-12);
+  font-variant-numeric: tabular-nums;
+}
+
+/* find highlights: a light orange wash, and the full shape color on the current match */
+.transcript-match {
+  color: inherit;
+  background: color-mix(in srgb, var(--course-orange) 22%, var(--color-background));
+  border-radius: 3px;
+}
+
+.transcript-match.is-current {
+  color: var(--color-label);
+  background: var(--course-orange);
+}
+
 /* a switch: the thumb sits right and the track turns blue when on */
 .switch {
   display: flex;
