@@ -6,8 +6,10 @@ import {
   deleteAudio,
   getAudio,
   listAudio,
+  maxPeakCount,
   normalizeAudio,
   saveAudio,
+  saveAudioPeaks,
 } from '../../src/data/audio.js'
 
 beforeEach(async () => {
@@ -78,5 +80,44 @@ describe('audio', () => {
     [{ recordingId: 'lecture17', blob: makeFile(), size: 9 }, /size is 9 but the blob has 5/],
   ])('rejects %j', (audio, message) => {
     expect(() => normalizeAudio(audio)).toThrow(message)
+  })
+
+  describe('peaks', () => {
+    it('keeps valid peaks through normalizeAudio and omits them when absent', () => {
+      const blob = makeFile()
+      expect(normalizeAudio({ recordingId: 'lecture17', blob, peaks: [0, 0.5, 1] }).peaks).toEqual([
+        0, 0.5, 1,
+      ])
+      expect('peaks' in normalizeAudio({ recordingId: 'lecture17', blob })).toBe(false)
+    })
+
+    it('rejects peaks that are not an array, too long, or out of range', () => {
+      const blob = makeFile()
+      const check = (peaks) => normalizeAudio({ recordingId: 'lecture17', blob, peaks })
+      expect(() => check('loud')).toThrow(/peaks must be an array/)
+      expect(() => check(new Array(maxPeakCount + 1).fill(0.5))).toThrow(/at most 400/)
+      expect(() => check([0.5, 1.2])).toThrow(/peak 1 must be a number from 0 to 1/)
+      expect(() => check([-0.1])).toThrow(/peak 0/)
+      expect(() => check([Number.NaN])).toThrow(/peak 0/)
+      expect(() => check(['0.5'])).toThrow(/peak 0/)
+      expect(check(new Array(maxPeakCount).fill(0.5))).toBeTruthy()
+    })
+
+    it('saves peaks on the existing audio and keeps the blob', async () => {
+      await saveAudio({ recordingId: 'lecture17', blob: makeFile() })
+      await saveAudioPeaks('lecture17', [0.1, 0.9])
+      const audio = await getAudio('lecture17')
+      expect(audio.peaks).toEqual([0.1, 0.9])
+      expect(audio.size).toBe(5)
+      expect(audio.blob.size).toBe(5)
+    })
+
+    it('throws when the recording has no audio, and when the peaks are bad', async () => {
+      await expect(saveAudioPeaks('lecture17', [0.5])).rejects.toThrow(/no audio/)
+      expect(await getAudio('lecture17')).toBeUndefined()
+      await saveAudio({ recordingId: 'lecture17', blob: makeFile() })
+      await expect(saveAudioPeaks('lecture17', [2])).rejects.toThrow(/peak 0/)
+      expect((await getAudio('lecture17')).peaks).toBeUndefined()
+    })
   })
 })
