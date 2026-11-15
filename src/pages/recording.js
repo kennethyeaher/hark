@@ -9,7 +9,7 @@ import { renderTranscriptList } from '../components/transcript-list.js'
 import { renderNotFound } from './not-found.js'
 import { getRecording, setRecordingStarred } from '../data/recordings.js'
 import { getAudio, saveAudioPeaks } from '../data/audio.js'
-import { listSegmentsForRecording } from '../data/segments.js'
+import { listSegmentsForRecording, updateSegmentTexts } from '../data/segments.js'
 import { listMomentsForRecording } from '../data/moments.js'
 import { createPlayer } from '../player/player.js'
 import { readSavedRate, saveRate } from '../player/saved-rate.js'
@@ -31,6 +31,7 @@ const defaultServices = {
   saveAudioPeaks,
   listSegmentsForRecording,
   listMomentsForRecording,
+  updateSegmentTexts,
   createPlayer,
   decodeAudio: decodeAudioFile,
   buildPeaks,
@@ -278,8 +279,97 @@ export function renderRecording(
     let matches = []
     let currentMatch = -1
     let hasQuery = false
+    let isEditing = false
+    let isSaving = false
     const list = renderTranscriptList({ segments, onSeek: seekTo })
     list.setMoments(moments)
+
+    /**
+     * ask the browser to confirm closing the tab while edits are unsaved.
+     * @param {BeforeUnloadEvent} event the unload event
+     * @returns {void}
+     */
+    const warnBeforeUnload = (event) => {
+      if (!list.hasChanges()) return
+      event.preventDefault()
+      event.returnValue = ''
+    }
+
+    /**
+     * turn the rows into text fields. find clears and auto scroll pauses until editing ends.
+     * @returns {void}
+     */
+    function startEditing() {
+      isEditing = true
+      toolbar.clearFind()
+      matches = []
+      hasQuery = false
+      list.showMatches([])
+      list.startEditing()
+      toolbar.setEditing(true)
+      window.addEventListener('beforeunload', warnBeforeUnload)
+      list.getField(Math.max(0, lastIndex))?.focus()
+    }
+
+    /**
+     * put the rows back and hand focus to Edit.
+     * @param {string} message what to tell screen readers
+     * @returns {void}
+     */
+    function stopEditing(message) {
+      isEditing = false
+      list.stopEditing()
+      toolbar.setEditing(false)
+      window.removeEventListener('beforeunload', warnBeforeUnload)
+      toolbar.focusEdit()
+      announce(message)
+    }
+
+    /**
+     * save the changed segments in one write. an empty segment stops the save and says which.
+     * @returns {Promise<void>} resolves once saved, or once the problem is shown
+     */
+    async function saveEdits() {
+      if (isSaving) return
+      const changes = list.getChanges()
+      const emptyIndexes = changes
+        .filter((change) => change.text === '')
+        .map((change) => change.index)
+      list.showEmptyErrors(emptyIndexes)
+      if (emptyIndexes.length > 0) {
+        list.getField(emptyIndexes[0])?.focus()
+        announce('A segment cannot be empty.')
+        return
+      }
+      if (changes.length === 0) {
+        stopEditing('No changes to save')
+        return
+      }
+      isSaving = true
+      toolbar.setSaving(true)
+      try {
+        await services.updateSegmentTexts(
+          id,
+          changes.map((change) => ({ id: segments[change.index].id, text: change.text }))
+        )
+      } catch (error) {
+        announce(`The edits could not be saved: ${error.message}`)
+        return
+      } finally {
+        isSaving = false
+        toolbar.setSaving(false)
+      }
+      if (hasLeft) return
+      for (const change of changes) segments[change.index].text = change.text
+      const noun = changes.length === 1 ? 'segment' : 'segments'
+      stopEditing(`Saved ${changes.length} ${noun}`)
+    }
+
+    // leaving the page with unsaved edits drops them, and says so
+    cleanups.push(() => {
+      window.removeEventListener('beforeunload', warnBeforeUnload)
+      if (isEditing && list.hasChanges()) announce('Transcript edits discarded')
+    })
 
     /**
      * mark the current match, scroll to it, and update the count.
@@ -310,6 +400,9 @@ export function renderRecording(
         if (matches.length === 0) return
         showCurrentMatch((currentMatch + direction + matches.length) % matches.length)
       },
+      onEdit: startEditing,
+      onCancel: () => stopEditing('Edits canceled'),
+      onSave: saveEdits,
     })
     controls.append(toolbar.element)
     slot.replaceChildren(list.element)
@@ -324,7 +417,7 @@ export function renderRecording(
       if (index === lastIndex) return
       lastIndex = index
       const row = list.setActiveIndex(index)
-      if (row && isAutoScrollOn) scrollRowIntoView(row, controls)
+      if (row && isAutoScrollOn && !isEditing) scrollRowIntoView(row, controls)
     }
     timeListeners.add(handleTime)
     cleanups.push(() => timeListeners.delete(handleTime))

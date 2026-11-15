@@ -83,3 +83,30 @@ describe('renderTranscriptToolbar', () => {
     expect(callbacks.onAutoScroll).toHaveBeenCalledWith(false)
   })
 })
+
+describe('transcript toolbar editing', () => {
+  it('swaps Edit for Cancel and Save, and turns find off', () => {
+    const callbacks = {
+      onAutoScroll: vi.fn(),
+      onFind: vi.fn(),
+      onFindStep: vi.fn(),
+      onEdit: vi.fn(),
+      onSave: vi.fn(),
+      onCancel: vi.fn(),
+    }
+    const toolbar = renderTranscriptToolbar({ isAutoScrollOn: true, ...callbacks })
+    const edit = toolbar.element.querySelector('.transcript-edit')
+    edit.click()
+    expect(callbacks.onEdit).toHaveBeenCalled()
+    toolbar.setEditing(true)
+    expect(edit.hidden).toBe(true)
+    expect(toolbar.element.querySelector('.transcript-find-input').disabled).toBe(true)
+    toolbar.element.querySelector('.transcript-save').click()
+    toolbar.element.querySelector('.transcript-cancel').click()
+    expect(callbacks.onSave).toHaveBeenCalled()
+    expect(callbacks.onCancel).toHaveBeenCalled()
+    toolbar.setSaving(true)
+    expect(toolbar.element.querySelector('.transcript-save').textContent).toBe('Saving')
+    expect(toolbar.element.querySelector('.transcript-save').disabled).toBe(true)
+  })
+})

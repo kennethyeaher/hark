@@ -1,4 +1,4 @@
-// the row above the transcript: find and the Auto-scroll switch
+// the row above the transcript: find, the Auto-scroll switch, and Edit with Save and Cancel
 
 import { createElement, createIcon } from '../lib/dom.js'
 
@@ -20,12 +20,22 @@ export function describeMatchCount(currentIndex, total, hasQuery) {
 /**
  * render the transcript toolbar. it holds no transcript state; it reports what the user did.
  * @param {{ isAutoScrollOn: boolean, onAutoScroll: (isOn: boolean) => void,
- *   onFind: (query: string) => void, onFindStep: (direction: 1 | -1) => void }} options the
- *   starting switch state and the callbacks
+ *   onFind: (query: string) => void, onFindStep: (direction: 1 | -1) => void,
+ *   onEdit: () => void, onSave: () => void, onCancel: () => void }} options the starting switch
+ *   state and the callbacks
  * @returns {{ element: HTMLElement, setMatchCount: (text: string) => void,
- *   clearFind: () => void }} the toolbar and its updates
+ *   clearFind: () => void, setEditing: (isEditing: boolean) => void,
+ *   setSaving: (isSaving: boolean) => void, focusEdit: () => void }} the toolbar and its updates
  */
-export function renderTranscriptToolbar({ isAutoScrollOn, onAutoScroll, onFind, onFindStep }) {
+export function renderTranscriptToolbar({
+  isAutoScrollOn,
+  onAutoScroll,
+  onFind,
+  onFindStep,
+  onEdit,
+  onSave,
+  onCancel,
+}) {
   // find: Enter and Shift+Enter step through matches, Escape clears
   const findInput = createElement('input', {
     type: 'search',
@@ -70,6 +80,27 @@ export function renderTranscriptToolbar({ isAutoScrollOn, onAutoScroll, onFind, 
     onAutoScroll(isOn)
   })
 
+  const editButton = createElement('button', {
+    type: 'button',
+    className: 'button button-plain button-small transcript-edit',
+    text: 'Edit',
+  })
+  const cancelButton = createElement('button', {
+    type: 'button',
+    className: 'button button-outline button-small transcript-cancel',
+    text: 'Cancel',
+  })
+  const saveButton = createElement('button', {
+    type: 'button',
+    className: 'button button-primary button-small transcript-save',
+    text: 'Save',
+  })
+  editButton.addEventListener('click', () => onEdit())
+  cancelButton.addEventListener('click', () => onCancel())
+  saveButton.addEventListener('click', () => onSave())
+  cancelButton.hidden = true
+  saveButton.hidden = true
+
   const findBox = createElement('div', { className: 'transcript-find' }, [
     createIcon(searchIconPaths, { size: 16 }),
     findInput,
@@ -81,6 +112,9 @@ export function renderTranscriptToolbar({ isAutoScrollOn, onAutoScroll, onFind, 
       createElement('span', { id: 'transcript-autoscroll-label', text: 'Auto-scroll' }),
       switchButton,
     ]),
+    editButton,
+    cancelButton,
+    saveButton,
   ])
 
   return {
@@ -102,6 +136,38 @@ export function renderTranscriptToolbar({ isAutoScrollOn, onAutoScroll, onFind, 
     clearFind() {
       findInput.value = ''
       count.textContent = ''
+    },
+
+    /**
+     * switch between Edit and Save with Cancel. find is off while editing.
+     * @param {boolean} isEditing true while the transcript is being edited
+     * @returns {void}
+     */
+    setEditing(isEditing) {
+      editButton.hidden = isEditing
+      cancelButton.hidden = !isEditing
+      saveButton.hidden = !isEditing
+      findInput.disabled = isEditing
+      findBox.classList.toggle('is-disabled', isEditing)
+    },
+
+    /**
+     * hold Save and Cancel while a save runs.
+     * @param {boolean} isSaving true while saving
+     * @returns {void}
+     */
+    setSaving(isSaving) {
+      saveButton.disabled = isSaving
+      cancelButton.disabled = isSaving
+      saveButton.textContent = isSaving ? 'Saving' : 'Save'
+    },
+
+    /**
+     * move focus to the Edit button, after editing ends.
+     * @returns {void}
+     */
+    focusEdit() {
+      editButton.focus()
     },
   }
 }

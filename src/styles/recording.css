@@ -473,3 +473,46 @@
   padding: var(--space-4) 12px;
   color: var(--color-secondary-label);
 }
+
+/* edit mode: the time stays, the text becomes a field that grows with its content */
+.transcript-edit-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 6px 12px;
+}
+
+.transcript-field-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.transcript-field {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 6px var(--space-2);
+  color: var(--color-label);
+  font: inherit;
+  font-size: var(--text-15);
+  line-height: 23px;
+  background: var(--color-background);
+  border: 1px solid var(--color-separator);
+  border-radius: var(--radius-input);
+  resize: vertical;
+  field-sizing: content;
+}
+
+.transcript-field[aria-invalid='true'] {
+  border-color: var(--color-red);
+}
+
+.transcript-field-error {
+  margin-top: var(--space-1);
+  color: var(--color-red-text);
+  font-size: var(--text-13);
+}
+
+.transcript-edit-row .transcript-time {
+  padding-top: 9px;
+}

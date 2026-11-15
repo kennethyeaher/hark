@@ -68,6 +68,7 @@ function createServices(overrides = {}) {
     saveAudioPeaks: vi.fn(async () => {}),
     listSegmentsForRecording: vi.fn(async () => segments),
     listMomentsForRecording: vi.fn(async () => moments),
+    updateSegmentTexts: vi.fn(async () => []),
     createPlayer: vi.fn(() => player),
     decodeAudio: vi.fn(async () => ({ samples: new Float32Array([0, 0.5]), durationSeconds: 1 })),
     buildPeaks: vi.fn(() => [0.3, 0.6, 1]),
@@ -415,5 +416,119 @@ describe('Recording page find', () => {
     input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', cancelable: true }))
     expect(page.querySelector('mark')).toBeNull()
     expect(page.querySelector('.transcript-find-count').textContent).toBe('')
+  })
+})
+
+describe('Recording page transcript editing', () => {
+  /**
+   * open the page and start editing.
+   * @param {object} [options] mount options
+   * @returns {Promise<{ page: HTMLElement, services: object }>} the page in edit mode
+   */
+  async function startEditing(options) {
+    const mounted = mount(options)
+    await vi.waitFor(() => expect(mounted.page.querySelector('.transcript-edit')).not.toBeNull())
+    mounted.page.querySelector('.transcript-edit').click()
+    return mounted
+  }
+
+  it('turns rows into fields, turns find off, and hides Edit', async () => {
+    const { page } = await startEditing()
+    const fields = page.querySelectorAll('.transcript-field')
+    expect(fields).toHaveLength(3)
+    expect(fields[0].value).toBe('So when we talk about coding.')
+    expect(fields[0].getAttribute('aria-label')).toBe('Segment at 12:04')
+    expect(page.querySelector('.transcript-row')).toBeNull()
+    expect(page.querySelector('.transcript-find-input').disabled).toBe(true)
+    expect(page.querySelector('.transcript-edit').hidden).toBe(true)
+    expect(page.querySelector('.transcript-save').hidden).toBe(false)
+  })
+
+  it('saves only the changed segments, trimmed, in one call', async () => {
+    const { page, services } = await startEditing()
+    const fields = page.querySelectorAll('.transcript-field')
+    fields[1].value = '  A lot of students jump to themes.  '
+    page.querySelector('.transcript-save').click()
+    await vi.waitFor(() => expect(page.querySelector('.transcript-row')).not.toBeNull())
+    expect(services.updateSegmentTexts).toHaveBeenCalledTimes(1)
+    expect(services.updateSegmentTexts).toHaveBeenCalledWith('week9', [
+      { id: 's1', text: 'A lot of students jump to themes.' },
+    ])
+    const rows = page.querySelectorAll('.transcript-row')
+    expect(rows[1].querySelector('.transcript-text').textContent).toBe(
+      'A lot of students jump to themes.'
+    )
+    expect(rows[1].querySelector('.transcript-time').textContent).toBe('12:38')
+    expect(document.activeElement).toBe(page.querySelector('.transcript-edit'))
+  })
+
+  it('refuses an empty segment and shows the error on its field', async () => {
+    const { page, services } = await startEditing()
+    const field = page.querySelectorAll('.transcript-field')[2]
+    field.value = '   '
+    page.querySelector('.transcript-save').click()
+    expect(services.updateSegmentTexts).not.toHaveBeenCalled()
+    expect(field.getAttribute('aria-invalid')).toBe('true')
+    const error = document.getElementById(field.getAttribute('aria-describedby'))
+    expect(error.textContent).toBe('A segment cannot be empty.')
+    expect(document.activeElement).toBe(field)
+  })
+
+  it('keeps the fields when the save fails', async () => {
+    const services = createServices({
+      updateSegmentTexts: vi.fn(async () => {
+        throw new Error('disk full')
+      }),
+    })
+    const { page } = await startEditing({ services })
+    page.querySelectorAll('.transcript-field')[0].value = 'Changed.'
+    page.querySelector('.transcript-save').click()
+    await vi.waitFor(() => expect(services.updateSegmentTexts).toHaveBeenCalled())
+    await vi.waitFor(() => expect(page.querySelector('.transcript-save').disabled).toBe(false))
+    expect(page.querySelectorAll('.transcript-field')).toHaveLength(3)
+  })
+
+  it('cancels without saving and puts the old text back', async () => {
+    const { page, services } = await startEditing()
+    page.querySelectorAll('.transcript-field')[0].value = 'Changed.'
+    page.querySelector('.transcript-cancel').click()
+    expect(services.updateSegmentTexts).not.toHaveBeenCalled()
+    expect(page.querySelector('.transcript-text').textContent).toBe('So when we talk about coding.')
+  })
+
+  it('stops clicks from seeking while editing', async () => {
+    const { page, services } = await startEditing()
+    await vi.waitFor(() => expect(services.createPlayer).toHaveBeenCalled())
+    page.querySelectorAll('.transcript-field')[1].click()
+    expect(services.player.seek).not.toHaveBeenCalled()
+  })
+
+  it('warns before the tab closes with unsaved edits, and only then', async () => {
+    const { page } = await startEditing()
+    const clean = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(clean)
+    expect(clean.defaultPrevented).toBe(false)
+    page.querySelectorAll('.transcript-field')[0].value = 'Changed.'
+    const dirty = new Event('beforeunload', { cancelable: true })
+    window.dispatchEvent(dirty)
+    expect(dirty.defaultPrevented).toBe(true)
+  })
+
+  it('discards unsaved edits on a route change and says so', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout'] })
+    try {
+      const { page } = await startEditing()
+      page.querySelectorAll('.transcript-field')[0].value = 'Changed.'
+      leavePage(page)
+      vi.advanceTimersByTime(200)
+      expect(document.getElementById('app-announcer').textContent).toBe(
+        'Transcript edits discarded'
+      )
+      const later = new Event('beforeunload', { cancelable: true })
+      window.dispatchEvent(later)
+      expect(later.defaultPrevented).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

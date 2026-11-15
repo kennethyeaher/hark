@@ -103,3 +103,46 @@ describe('transcript find highlights', () => {
     expect(list.element.querySelector('mark.is-current')).toBeNull()
   })
 })
+
+describe('transcript editing', () => {
+  /**
+   * build a list over fresh copies of the segments, since edits write segment text.
+   * @returns {object} the list
+   */
+  const build = () =>
+    renderTranscriptList({ segments: segments.map((segment) => ({ ...segment })), onSeek: vi.fn() })
+
+  it('swaps rows for fields and back, keeping the same row buttons', () => {
+    const list = build()
+    const firstRow = list.getRow(0)
+    list.setActiveIndex(0)
+    list.startEditing()
+    expect(list.element.querySelectorAll('.transcript-field')).toHaveLength(3)
+    expect(list.getField(0).value).toBe('First line.')
+    list.stopEditing()
+    expect(list.element.querySelector('.transcript-field')).toBeNull()
+    expect(list.element.querySelector('.transcript-row')).toBe(firstRow)
+    expect(firstRow.classList.contains('is-active')).toBe(true)
+  })
+
+  it('reports only trimmed text that changed', () => {
+    const list = build()
+    expect(list.getChanges()).toEqual([])
+    list.startEditing()
+    expect(list.hasChanges()).toBe(false)
+    list.getField(0).value = '  First line.  '
+    list.getField(1).value = 'Second line, fixed.'
+    expect(list.hasChanges()).toBe(true)
+    expect(list.getChanges()).toEqual([{ index: 1, text: 'Second line, fixed.' }])
+  })
+
+  it('marks empty fields and clears the mark once fixed', () => {
+    const list = build()
+    list.startEditing()
+    list.showEmptyErrors([1])
+    expect(list.getField(1).getAttribute('aria-invalid')).toBe('true')
+    expect(list.getField(0).hasAttribute('aria-invalid')).toBe(false)
+    list.showEmptyErrors([])
+    expect(list.getField(1).hasAttribute('aria-invalid')).toBe(false)
+  })
+})

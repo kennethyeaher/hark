@@ -30,7 +30,12 @@ export function groupMomentsBySegment(segments, moments) {
  * @returns {{ element: HTMLElement, getRow: (index: number) => HTMLElement | undefined,
  *   setActiveIndex: (index: number) => HTMLElement | null,
  *   setMoments: (moments: object[]) => void, showMatches: (matches: object[]) => void,
- *   setCurrentMatch: (matchIndex: number) => HTMLElement | null }} the list and its updates
+ *   setCurrentMatch: (matchIndex: number) => HTMLElement | null, startEditing: () => void,
+ *   stopEditing: () => void, getChanges: () => object[], hasChanges: () => boolean,
+ *   showEmptyErrors: (indexes: number[]) => void, getField: (index: number) => HTMLElement,
+ *   refreshText: (index: number) => void }}
+ *   the list and its updates. edits read and write `segment.text`, so the caller's
+ *   segments stay the source of truth.
  * @throws {TypeError} when segments is not an array or onSeek is not a function
  */
 export function renderTranscriptList({ segments, onSeek }) {
@@ -68,6 +73,8 @@ export function renderTranscriptList({ segments, onSeek }) {
   let markedIndexes = []
   let marks = []
   let currentMark = null
+  // the text fields while editing, one per segment
+  let fields = null
 
   /**
    * read the text span of a row.
@@ -83,6 +90,33 @@ export function renderTranscriptList({ segments, onSeek }) {
    */
   function refreshText(index) {
     textOf(index).textContent = segments[index].text.trim()
+  }
+
+  /**
+   * build an edit field for one segment. times are never edited.
+   * @param {{ startSeconds: number, text: string }} segment the segment
+   * @param {number} index its index
+   * @returns {{ wrapper: HTMLElement, field: HTMLTextAreaElement, error: HTMLElement }} the parts
+   */
+  function buildField(segment, index) {
+    const time = formatClock(segment.startSeconds)
+    const field = createElement('textarea', {
+      className: 'transcript-field',
+      rows: 2,
+      'aria-label': `Segment at ${time}`,
+      'data-index': index,
+    })
+    field.value = segment.text.trim()
+    const error = createElement('p', {
+      className: 'transcript-field-error',
+      id: `transcript-field-error-${index}`,
+    })
+    error.hidden = true
+    const wrapper = createElement('div', { className: 'transcript-edit-row' }, [
+      createElement('span', { className: 'transcript-time', text: time }),
+      createElement('div', { className: 'transcript-field-wrap' }, [field, error]),
+    ])
+    return { wrapper, field, error }
   }
 
   return {
@@ -190,5 +224,85 @@ export function renderTranscriptList({ segments, onSeek }) {
       currentMark?.classList.add('is-current')
       return currentMark?.closest('.transcript-row') ?? null
     },
+
+    /**
+     * turn every row into a text field. the row buttons are kept aside, so stopping puts the
+     * same rows back with their active class and moment dots.
+     * @returns {void}
+     */
+    startEditing() {
+      if (fields) return
+      fields = segments.map((segment, index) => {
+        const parts = buildField(segment, index)
+        rows[index].replaceWith(parts.wrapper)
+        return parts
+      })
+    },
+
+    /**
+     * put the row buttons back, showing any saved text.
+     * @returns {void}
+     */
+    stopEditing() {
+      if (!fields) return
+      fields.forEach(({ wrapper }, index) => {
+        refreshText(index)
+        wrapper.replaceWith(rows[index])
+      })
+      fields = null
+    },
+
+    /**
+     * list the segments whose trimmed text differs from the saved text.
+     * @returns {{ index: number, text: string }[]} the changes, in transcript order
+     */
+    getChanges() {
+      if (!fields) return []
+      return fields.flatMap(({ field }, index) => {
+        const text = field.value.trim()
+        return text === segments[index].text.trim() ? [] : [{ index, text }]
+      })
+    },
+
+    /**
+     * check whether any field differs from the saved text.
+     * @returns {boolean} true when there is something to save
+     */
+    hasChanges() {
+      return Boolean(
+        fields?.some(({ field }, index) => field.value.trim() !== segments[index].text.trim())
+      )
+    },
+
+    /**
+     * mark empty fields as invalid with an inline message, and clear the mark from the rest.
+     * @param {number[]} indexes segments that are empty
+     * @returns {void}
+     */
+    showEmptyErrors(indexes) {
+      if (!fields) return
+      const invalid = new Set(indexes)
+      fields.forEach(({ field, error }, index) => {
+        const isInvalid = invalid.has(index)
+        error.hidden = !isInvalid
+        error.textContent = isInvalid ? 'A segment cannot be empty.' : ''
+        if (isInvalid) {
+          field.setAttribute('aria-invalid', 'true')
+          field.setAttribute('aria-describedby', error.id)
+        } else {
+          field.removeAttribute('aria-invalid')
+          field.removeAttribute('aria-describedby')
+        }
+      })
+    },
+
+    /**
+     * read the edit field for a segment.
+     * @param {number} index segment index
+     * @returns {HTMLTextAreaElement | undefined} the field, while editing
+     */
+    getField: (index) => fields?.[index]?.field,
+
+    refreshText,
   }
 }
