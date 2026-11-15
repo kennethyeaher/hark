@@ -629,8 +629,8 @@ export function renderRecording(
     try {
       const { samples } = await services.decodeAudio(blob)
       const peaks = services.buildPeaks(samples, peakBarCount)
-      if (hasLeft) return
-      bar.setPeaks(peaks)
+      // the decode is the costly part, so its result is kept even when the page is gone
+      if (!hasLeft) bar.setPeaks(peaks)
       await services.saveAudioPeaks(id, peaks)
     } catch (error) {
       // the waveform is decoration on top of a working player, so log it and keep the placeholder
@@ -669,6 +669,7 @@ export function renderRecording(
       document.title = `${stored.title} · Hark`
     },
     (error) => {
+      if (hasLeft) return
       page.removeAttribute('aria-busy')
       page.replaceChildren(
         createElement('h1', { className: 'page-title', text: 'Recording' }),

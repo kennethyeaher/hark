@@ -200,6 +200,20 @@ describe('Recording page states', () => {
     await vi.waitFor(() => expect(page.textContent).toMatch(/not found/i))
   })
 
+  it('says so when the recording cannot be read', async () => {
+    const services = createServices({
+      getRecording: vi.fn(async () => {
+        throw new Error('storage blocked')
+      }),
+    })
+    const { page } = mount({ recording: null, services })
+    await vi.waitFor(() =>
+      expect(page.querySelector('[role="alert"]')?.textContent).toBe(
+        'This recording could not be read: storage blocked'
+      )
+    )
+  })
+
   it('opens a recording in Trash by reading the store', async () => {
     const services = createServices({
       getRecording: vi.fn(async () => ({ ...baseRecording, deletedAt: new Date() })),
@@ -276,6 +290,39 @@ describe('Recording page player', () => {
     )
     expect(services.buildPeaks).toHaveBeenCalledWith(expect.any(Float32Array), 120)
     expect(page.querySelectorAll('.player-waveform-bar')).toHaveLength(3)
+  })
+
+  it('still saves peaks that finish after the page is gone', async () => {
+    let finishDecode
+    const services = createServices({
+      getAudio: vi.fn(async () => ({ recordingId: 'week9', blob: new Blob(['x']) })),
+      decodeAudio: vi.fn(
+        () =>
+          new Promise((resolve) => {
+            finishDecode = () => resolve({ samples: new Float32Array([0.5]), durationSeconds: 1 })
+          })
+      ),
+    })
+    const { page } = mount({ services })
+    await vi.waitFor(() => expect(services.decodeAudio).toHaveBeenCalled())
+    leavePage(page)
+    finishDecode()
+    await vi.waitFor(() => expect(services.saveAudioPeaks).toHaveBeenCalled())
+  })
+
+  it('keeps the placeholder bars when the audio cannot be decoded', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const services = createServices({
+      getAudio: vi.fn(async () => ({ recordingId: 'week9', blob: new Blob(['x']) })),
+      decodeAudio: vi.fn(async () => {
+        throw new Error('unsupported codec')
+      }),
+    })
+    const { page } = mount({ services })
+    await vi.waitFor(() => expect(consoleError).toHaveBeenCalled())
+    expect(page.querySelector('.player-waveform').classList.contains('is-pending')).toBe(true)
+    expect(services.saveAudioPeaks).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 
   it('releases the player when the route changes', async () => {

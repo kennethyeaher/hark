@@ -23,6 +23,23 @@ class FakeAudio extends EventTarget {
     this.paused = true
     this.dispatchEvent(new Event('pause'))
   }
+
+  /**
+   * forget the source, as the real element does when its src attribute is removed.
+   * @param {string} name attribute name
+   * @returns {void}
+   */
+  removeAttribute(name) {
+    if (name === 'src') this.src = ''
+  }
+
+  /**
+   * count reloads, so a test can see the element was reset.
+   * @returns {void}
+   */
+  load() {
+    this.loadCount = (this.loadCount ?? 0) + 1
+  }
 }
 
 let audio
@@ -195,6 +212,8 @@ describe('createPlayer', () => {
     expect(audio.paused).toBe(true)
     expect(frames.size).toBe(0)
     expect(revoked).toEqual(['blob:fake'])
+    expect(audio.src).toBe('')
+    expect(audio.loadCount).toBe(1)
 
     audio.dispatchEvent(new Event('seeked'))
     player.seek(5)

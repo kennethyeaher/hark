@@ -264,6 +264,9 @@ export function createPlayer(blob, options = {}) {
         audio.removeEventListener(name, handler)
       }
       listeners.clear()
+      // dropping the source lets the browser free the decoded audio now, not at garbage collection
+      audio.removeAttribute('src')
+      audio.load()
       urlApi.revoke(objectUrl)
     },
   }
